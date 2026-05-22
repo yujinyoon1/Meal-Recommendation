@@ -1,0 +1,56 @@
+# Local dev compose
+# - frontend dev (9514) / backend dev (9534) / nginx (80,443)
+# - MariaDB는 기본 외부 호스트 사용. 로컬 DB가 필요하면 --profile local-db
+# Public domain: p14.sumzip.com (Nginx 종단)
+
+services:
+  backend:
+    build:
+      context: ../backend
+    image: mis2601/backend:dev
+    env_file: ../backend/.env
+    environment:
+      NODE_ENV: development
+      PORT: 9534
+    ports:
+      - "9534:9534"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+    image: mis2601/frontend:dev
+    ports:
+      - "9514:9514"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.25-alpine
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/tls:/etc/nginx/tls:ro
+    restart: unless-stopped
+
+  # docker compose --profile local-db up -d
+  local-db:
+    profiles: ["local-db"]
+    image: mariadb:10.6
+    environment:
+      MARIADB_ROOT_PASSWORD: devroot
+      MARIADB_DATABASE: mis2601
+      MARIADB_USER: mis
+      MARIADB_PASSWORD: devpass
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "13306:3306"
+    volumes:
+      - local_db_data:/var/lib/mysql
+
+volumes:
+  local_db_data:

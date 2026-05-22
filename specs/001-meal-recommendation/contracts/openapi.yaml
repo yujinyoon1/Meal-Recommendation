@@ -1,0 +1,541 @@
+openapi: 3.0.3
+info:
+  title: AI 1인 가구 맞춤형 식단 추천 서비스 API
+  version: 0.1.0
+  description: |
+    Feature `001-meal-recommendation` 의 REST API 계약.
+    spec.md FR-001~029과 1:1 매핑되며, 구현은 Express(TypeScript) 기준.
+servers:
+  - url: http://localhost:3000/api
+    description: 로컬 개발
+  - url: https://{prodHost}/api
+    description: 프로덕션
+    variables:
+      prodHost:
+        default: app.example.com
+
+tags:
+  - name: Auth
+  - name: Profile
+  - name: Inventory
+  - name: Recommendation
+  - name: Feedback
+  - name: Shopping
+  - name: History
+  - name: Privacy
+  - name: Health
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: 회원 가입 (FR-001, FR-024)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201': { description: 가입 완료, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' }}}}
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { description: 이메일 중복 }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 로그인 (JWT 발급)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' }}}
+      responses:
+        '200': { description: 성공, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' }}}}
+        '401': { description: 인증 실패 }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: 액세스 토큰 갱신 (Refresh Cookie)
+      responses:
+        '200': { description: 갱신됨 }
+        '401': { description: 리프레시 토큰 만료/유효하지 않음 }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 로그아웃 (Refresh Cookie 무효화)
+      responses:
+        '204': { description: 성공 }
+
+  /me/profile/basic:
+    get:
+      tags: [Profile]
+      summary: 기본 프로필 조회 (FR-002)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 성공, content: { application/json: { schema: { $ref: '#/components/schemas/BasicProfile' }}}}
+    put:
+      tags: [Profile]
+      summary: 기본 프로필 등록/수정 (FR-002, FR-005)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/BasicProfileInput' }}}
+      responses:
+        '200': { description: 성공 }
+
+  /me/profile/health:
+    get:
+      tags: [Profile]
+      summary: 건강 프로필 조회 (FR-003, 민감정보 - 감사 로깅)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 성공, content: { application/json: { schema: { $ref: '#/components/schemas/HealthProfile' }}}}
+    put:
+      tags: [Profile]
+      summary: 건강 프로필 등록/수정 (FR-003)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/HealthProfileInput' }}}
+      responses:
+        '200': { description: 성공 }
+
+  /me/profile/diet:
+    get:
+      tags: [Profile]
+      summary: 식습관 프로필 조회 (FR-004)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 성공, content: { application/json: { schema: { $ref: '#/components/schemas/DietPreference' }}}}
+    put:
+      tags: [Profile]
+      summary: 식습관 프로필 등록/수정 (FR-004)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/DietPreferenceInput' }}}
+      responses:
+        '200': { description: 성공 }
+
+  /me/consents:
+    get:
+      tags: [Profile]
+      summary: 동의 상태 조회 (FR-024)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 성공
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ConsentRecord' }}}}
+    post:
+      tags: [Profile]
+      summary: 동의 변경 (개별 토글)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ConsentToggle' }}}
+      responses:
+        '200': { description: 성공 }
+
+  /inventory/items:
+    get:
+      tags: [Inventory]
+      summary: 현재 보유 식재료 조회 (FR-009)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: includeConsumed
+          schema: { type: boolean, default: false }
+      responses:
+        '200': { description: 성공, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/IngredientItem' }}}}}
+    post:
+      tags: [Inventory]
+      summary: 텍스트 일괄 입력 (FR-006, FR-007, FR-008)
+      description: |
+        자유 텍스트를 파싱·정규화하여 다수의 IngredientItem을 생성한다.
+        예: "계란 2개, 양파 1개, 두부 반 모"
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 2000 }
+      responses:
+        '201':
+          description: 등록됨
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/IngredientItem' }}
+                  unresolved: { type: array, items: { type: string }, description: 정규화 실패 항목 }
+
+  /inventory/items/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer, format: int64 }
+    patch:
+      tags: [Inventory]
+      summary: 소모 표시/수량/유통기한 수정
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/IngredientItemPatch' }}}
+      responses:
+        '200': { description: 성공 }
+    delete:
+      tags: [Inventory]
+      summary: 식재료 삭제
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: 성공 }
+
+  /recommendations:
+    post:
+      tags: [Recommendation]
+      summary: 신규 추천 요청 (FR-010~016)
+      description: |
+        프로필 + 현재 인벤토리 기반 1인분 식단/레시피 생성.
+        결정적 알레르기 검증 통과 후 결과 저장.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inventoryOverride:
+                  description: 옵션 — 저장된 인벤토리 대신 1회성 인벤토리 사용
+                  type: array
+                  items: { type: string }
+                mealLabel:
+                  type: string
+                  enum: [breakfast, lunch, dinner, snack, daily]
+      responses:
+        '201': { description: 추천 결과, content: { application/json: { schema: { $ref: '#/components/schemas/Recommendation' }}}}
+        '422': { description: 입력 부족(필수 재료 없음 등) }
+        '503': { description: LLM 일시 장애 — 재시도 가능 }
+
+    get:
+      tags: [Recommendation]
+      summary: 추천 이력 목록 (FR-020)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+        - in: query
+          name: cursor
+          schema: { type: string, nullable: true }
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/RecommendationSummary' }}
+                  nextCursor: { type: string, nullable: true }
+
+  /recommendations/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer, format: int64 }
+    get:
+      tags: [Recommendation]
+      summary: 단일 추천 상세 (FR-020)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 성공, content: { application/json: { schema: { $ref: '#/components/schemas/Recommendation' }}}}
+        '404': { description: 없음 }
+
+  /recommendations/{id}/feedback:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer, format: int64 }
+    post:
+      tags: [Feedback]
+      summary: 추천 만족도 피드백 (FR-018, FR-019)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/FeedbackInput' }}}
+      responses:
+        '201': { description: 등록됨 }
+
+  /recommendations/{id}/shopping-list:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer, format: int64 }
+    get:
+      tags: [Shopping]
+      summary: 부족 영양소 기반 장보기 리스트 (FR-021, FR-022)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 성공, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ShoppingItem' }}}}}
+
+  /me/data/export:
+    get:
+      tags: [Privacy]
+      summary: 본인 데이터 내보내기 (FR-025)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: JSON 다운로드
+          content: { application/json: { schema: { type: object }}}
+
+  /me:
+    delete:
+      tags: [Privacy]
+      summary: 회원 탈퇴 (FR-025 — 30일 grace 후 hard-delete)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '202': { description: 처리 접수 }
+
+  /health/live:
+    get:
+      tags: [Health]
+      summary: 라이브니스
+      responses:
+        '200': { description: OK }
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: 레디니스 (DB / LLM 어댑터 점검)
+      responses:
+        '200': { description: 모든 의존성 정상 }
+        '503': { description: 의존성 비정상 }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    ValidationError:
+      description: 입력 검증 실패
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+
+    RegisterRequest:
+      type: object
+      required: [email, password, consents]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 10, maxLength: 128 }
+        displayName: { type: string, maxLength: 100 }
+        consents:
+          type: object
+          properties:
+            terms: { type: boolean }
+            privacy: { type: boolean }
+            sensitiveHealth: { type: boolean }
+            marketing: { type: boolean }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, example: Bearer }
+        expiresIn: { type: integer, example: 900 }
+        user:
+          type: object
+          properties:
+            id: { type: integer, format: int64 }
+            email: { type: string }
+
+    BasicProfile:
+      allOf:
+        - $ref: '#/components/schemas/BasicProfileInput'
+        - type: object
+          properties:
+            bmi: { type: number, format: float }
+            updatedAt: { type: string, format: date-time }
+
+    BasicProfileInput:
+      type: object
+      properties:
+        age: { type: integer, minimum: 10, maximum: 120 }
+        gender: { type: string, enum: [male, female, other, prefer_not_say] }
+        heightCm: { type: number, minimum: 80, maximum: 250 }
+        weightKg: { type: number, minimum: 20, maximum: 300 }
+
+    HealthProfile:
+      allOf:
+        - $ref: '#/components/schemas/HealthProfileInput'
+        - type: object
+          properties:
+            updatedAt: { type: string, format: date-time }
+
+    HealthProfileInput:
+      type: object
+      properties:
+        allergies: { type: array, items: { type: string } }
+        diseases: { type: array, items: { type: string } }
+        goal: { type: string, enum: [lose_weight, maintain, gain_muscle] }
+        targetCaloriesKcal: { type: integer, minimum: 800, maximum: 5000 }
+
+    DietPreference:
+      allOf:
+        - $ref: '#/components/schemas/DietPreferenceInput'
+        - type: object
+          properties:
+            updatedAt: { type: string, format: date-time }
+
+    DietPreferenceInput:
+      type: object
+      properties:
+        mealsPerDay: { type: integer, minimum: 1, maximum: 6 }
+        diningOutPerWeek: { type: integer, minimum: 0, maximum: 21 }
+        deliveryPerWeek: { type: integer, minimum: 0, maximum: 21 }
+        avoidIngredients: { type: array, items: { type: string } }
+        preferCategories: { type: array, items: { type: string } }
+        cookingTimeMaxMin: { type: integer, minimum: 5, maximum: 120, default: 30 }
+
+    ConsentRecord:
+      type: object
+      properties:
+        type: { type: string, enum: [terms, privacy, sensitive_health, marketing, third_party_share] }
+        granted: { type: boolean }
+        grantedAt: { type: string, format: date-time, nullable: true }
+        revokedAt: { type: string, format: date-time, nullable: true }
+        version: { type: string }
+
+    ConsentToggle:
+      type: object
+      required: [type, granted]
+      properties:
+        type: { type: string, enum: [terms, privacy, sensitive_health, marketing, third_party_share] }
+        granted: { type: boolean }
+
+    IngredientItem:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        rawText: { type: string }
+        normalizedName: { type: string, nullable: true }
+        foodId: { type: integer, format: int64, nullable: true }
+        quantity: { type: number, nullable: true }
+        unit: { type: string, nullable: true }
+        expiresAt: { type: string, format: date, nullable: true }
+        consumed: { type: boolean }
+
+    IngredientItemPatch:
+      type: object
+      properties:
+        consumed: { type: boolean }
+        quantity: { type: number }
+        unit: { type: string }
+        expiresAt: { type: string, format: date }
+
+    Recommendation:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        requestedAt: { type: string, format: date-time }
+        status: { type: string, enum: [generated, validated, rejected, failed] }
+        mealPlans:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              recipes: { type: array, items: { $ref: '#/components/schemas/Recipe' }}
+        nutrition: { $ref: '#/components/schemas/NutritionAnalysis' }
+        shoppingList: { type: array, items: { $ref: '#/components/schemas/ShoppingItem' }}
+        warnings: { type: array, items: { type: string } }
+        disclaimer: { type: string, example: "본 추천은 의학적 진단/처방을 대체하지 않습니다." }
+
+    RecommendationSummary:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        requestedAt: { type: string, format: date-time }
+        title: { type: string }
+        rating: { type: integer, nullable: true }
+        totalKcal: { type: number, nullable: true }
+
+    Recipe:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        description: { type: string }
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              quantity: { type: number, nullable: true }
+              unit: { type: string, nullable: true }
+              substitute: { type: string, nullable: true }
+        steps: { type: array, items: { type: string } }
+        estCookingMin: { type: integer }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+
+    NutritionAnalysis:
+      type: object
+      properties:
+        totalKcal: { type: number }
+        carbG: { type: number }
+        proteinG: { type: number }
+        fatG: { type: number }
+        fiberG: { type: number }
+        sodiumMg: { type: number }
+        rdaRatio:
+          type: object
+          additionalProperties: { type: number }
+        confidence: { type: string, enum: [high, medium, low] }
+
+    ShoppingItem:
+      type: object
+      properties:
+        name: { type: string }
+        category: { type: string }
+        reason: { type: string }
+        suggestedQty: { type: string, nullable: true }
+
+    FeedbackInput:
+      type: object
+      required: [rating]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, maxLength: 1000 }
+
+security:
+  - bearerAuth: []

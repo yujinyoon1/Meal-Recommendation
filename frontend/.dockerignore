@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+tests/e2e
+.env
+.env.*
+*.log
+.DS_Store
+.git
+.gitignore
+.eslintcache
+.vite

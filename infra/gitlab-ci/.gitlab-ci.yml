@@ -1,0 +1,86 @@
+# GitLab CI — 5 stages
+# 도메인: p14.sumzip.com / FE 9514 / BE 9534
+
+stages:
+  - lint
+  - test
+  - build
+  - docker
+  - deploy
+
+variables:
+  NODE_VERSION: "20"
+
+default:
+  image: node:20
+
+.cache-frontend:
+  cache:
+    key: "fe-$CI_COMMIT_REF_SLUG"
+    paths: [frontend/node_modules/]
+
+.cache-backend:
+  cache:
+    key: "be-$CI_COMMIT_REF_SLUG"
+    paths: [backend/node_modules/]
+
+lint:frontend:
+  stage: lint
+  extends: .cache-frontend
+  script:
+    - cd frontend && npm ci && npm run lint
+
+lint:backend:
+  stage: lint
+  extends: .cache-backend
+  script:
+    - cd backend && npm ci && npm run lint
+
+test:frontend:
+  stage: test
+  extends: .cache-frontend
+  script:
+    - cd frontend && npm ci && npm run test:run
+
+test:backend:
+  stage: test
+  extends: .cache-backend
+  script:
+    - cd backend && npm ci && npm run test
+
+build:frontend:
+  stage: build
+  extends: .cache-frontend
+  script:
+    - cd frontend && npm ci && npm run build
+  artifacts:
+    paths: [frontend/dist/]
+    expire_in: 1 week
+
+build:backend:
+  stage: build
+  extends: .cache-backend
+  script:
+    - cd backend && npm ci && npm run build
+  artifacts:
+    paths: [backend/dist/]
+    expire_in: 1 week
+
+docker:build:
+  stage: docker
+  image: docker:24
+  services: [docker:24-dind]
+  only: [main]
+  script:
+    - docker build -t mis2601/backend:$CI_COMMIT_SHORT_SHA backend/
+    - docker build -t mis2601/frontend:$CI_COMMIT_SHORT_SHA frontend/
+
+deploy:prod:
+  stage: deploy
+  only: [main]
+  when: manual
+  environment:
+    name: production
+    url: https://p14.sumzip.com
+  script:
+    - echo "TODO: deploy to p14.sumzip.com"
