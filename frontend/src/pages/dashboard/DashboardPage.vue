@@ -33,21 +33,47 @@ onMounted(load);
     </header>
 
     <div class="grid">
-      <AppCard eyebrow="INVENTORY" :title="`${inventoryCount} ITEMS`" variant="default" padding="lg" m-stripe>
+      <AppCard
+        eyebrow="INVENTORY"
+        :title="`${inventoryCount} ITEMS`"
+        variant="default"
+        padding="lg"
+        m-stripe
+      >
         <p>보유 식재료를 입력하고 추천을 받아보세요.</p>
         <template #footer>
           <RouterLink to="/inventory">
-            <AppButton variant="primary">GO TO INVENTORY →</AppButton>
+            <AppButton variant="primary">
+              GO TO INVENTORY →
+            </AppButton>
           </RouterLink>
         </template>
       </AppCard>
 
-      <AppCard eyebrow="RECENT RECOMMENDATION" :title="recent ? `#${recent.id}` : 'NONE YET'" variant="soft" padding="lg">
+      <AppCard
+        eyebrow="RECENT RECOMMENDATION"
+        :title="recent ? `#${recent.id}` : 'NONE YET'"
+        variant="soft"
+        padding="lg"
+      >
         <p v-if="recent">
-          <AppBadge tone="success" variant="outline">{{ recent.status.toUpperCase() }}</AppBadge>
-          <span v-if="recent.total_kcal" class="kcal">{{ recent.total_kcal }} kcal</span>
+          <AppBadge
+            tone="success"
+            variant="outline"
+          >
+            {{ recent.status.toUpperCase() }}
+          </AppBadge>
+          <span
+            v-if="recent.total_kcal"
+            class="kcal"
+          >{{ recent.total_kcal }} kcal</span>
         </p>
-        <p v-else class="muted">아직 추천 이력이 없습니다.</p>
+        <p
+          v-else
+          class="muted"
+        >
+          아직 추천 이력이 없습니다.
+        </p>
       </AppCard>
     </div>
   </section>

@@ -12,11 +12,29 @@ defineProps<{
 </script>
 
 <template>
-  <div class="empty" :class="`empty--${tone ?? 'empty'}`">
-    <div class="empty__icon" v-if="icon">{{ icon }}</div>
-    <h3 class="empty__title">{{ title }}</h3>
-    <p v-if="message" class="empty__msg">{{ message }}</p>
-    <div v-if="$slots.default" class="empty__actions">
+  <div
+    class="empty"
+    :class="`empty--${tone ?? 'empty'}`"
+  >
+    <div
+      v-if="icon"
+      class="empty__icon"
+    >
+      {{ icon }}
+    </div>
+    <h3 class="empty__title">
+      {{ title }}
+    </h3>
+    <p
+      v-if="message"
+      class="empty__msg"
+    >
+      {{ message }}
+    </p>
+    <div
+      v-if="$slots.default"
+      class="empty__actions"
+    >
       <slot />
     </div>
   </div>

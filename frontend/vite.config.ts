@@ -32,5 +32,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // Playwright e2e 디렉터리는 vitest 대상 제외
+    include: ['tests/unit/**/*.{test,spec}.{ts,js}', 'src/**/__tests__/**/*.{ts,js}'],
+    exclude: ['node_modules', 'dist', 'tests/e2e/**', 'playwright-report'],
   },
 });

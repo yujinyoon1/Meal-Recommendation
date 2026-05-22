@@ -33,7 +33,7 @@ function ipBuf(ip: string | undefined): Buffer | null {
 
 export async function register(input: RegisterInput, ip?: string): Promise<AuthResult> {
   // FR-024: terms + privacy 동의 필수
-  const required = new Set(['terms', 'privacy']);
+  const required = new Set<'terms' | 'privacy'>(['terms', 'privacy']);
   const granted = new Set(input.consents.filter((c) => c.granted).map((c) => c.type));
   for (const r of required) {
     if (!granted.has(r)) {

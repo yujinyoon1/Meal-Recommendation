@@ -64,7 +64,10 @@ const bmi = computed(() => {
       />
     </div>
 
-    <div v-if="bmi" class="bmi-preview">
+    <div
+      v-if="bmi"
+      class="bmi-preview"
+    >
       <span class="label-uppercase bmi-preview__label">BMI</span>
       <span class="bmi-preview__value">{{ bmi }}</span>
     </div>

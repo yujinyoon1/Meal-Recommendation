@@ -56,27 +56,66 @@ async function finish() {
       <h1>ONBOARDING</h1>
       <div class="progress">
         <span :class="{ on: step >= 1 }">1</span>
-        <span class="bar" :class="{ on: step >= 2 }" />
+        <span
+          class="bar"
+          :class="{ on: step >= 2 }"
+        />
         <span :class="{ on: step >= 2 }">2</span>
-        <span class="bar" :class="{ on: step >= 3 }" />
+        <span
+          class="bar"
+          :class="{ on: step >= 3 }"
+        />
         <span :class="{ on: step >= 3 }">3</span>
       </div>
     </header>
 
-    <Step1Basic v-if="step === 1" v-model="basic" />
-    <Step2Health v-else-if="step === 2" v-model="health" />
-    <Step3Diet v-else v-model="diet" />
+    <Step1Basic
+      v-if="step === 1"
+      v-model="basic"
+    />
+    <Step2Health
+      v-else-if="step === 2"
+      v-model="health"
+    />
+    <Step3Diet
+      v-else
+      v-model="diet"
+    />
 
     <footer class="wizard__nav">
-      <AppButton v-if="step > 1" variant="outline" @click="step = (step - 1) as 1 | 2 | 3">PREV</AppButton>
+      <AppButton
+        v-if="step > 1"
+        variant="outline"
+        @click="step = (step - 1) as 1 | 2 | 3"
+      >
+        PREV
+      </AppButton>
       <div class="spacer" />
-      <AppButton v-if="step < 3" variant="primary" @click="step = (step + 1) as 1 | 2 | 3">NEXT</AppButton>
-      <AppButton v-else variant="primary" :disabled="saving" @click="finish">
+      <AppButton
+        v-if="step < 3"
+        variant="primary"
+        @click="step = (step + 1) as 1 | 2 | 3"
+      >
+        NEXT
+      </AppButton>
+      <AppButton
+        v-else
+        variant="primary"
+        :disabled="saving"
+        @click="finish"
+      >
         {{ saving ? 'SAVING…' : 'FINISH' }}
       </AppButton>
     </footer>
 
-    <AppToast :open="!!error" tone="error" title="ERROR" @close="error = null">{{ error }}</AppToast>
+    <AppToast
+      :open="!!error"
+      tone="error"
+      title="ERROR"
+      @close="error = null"
+    >
+      {{ error }}
+    </AppToast>
   </section>
 </template>
 

@@ -1,5 +1,6 @@
 import pino from 'pino';
-import pinoHttp from 'pino-http';
+import { pinoHttp } from 'pino-http';
+import type { RequestHandler } from 'express';
 import { env } from '../config/env.js';
 
 export const logger = pino({
@@ -13,13 +14,12 @@ export const logger = pino({
 
 export const httpLogger = pinoHttp({
   logger,
-  customProps: (req) => ({ requestId: (req as { id?: string }).id }),
   serializers: {
-    req(req) {
+    req(req: { method: string; url: string; id?: string }) {
       return { method: req.method, url: req.url, id: req.id };
     },
   },
-});
+}) as unknown as RequestHandler;
 
 export function childLogger(requestId: string) {
   return logger.child({ requestId });

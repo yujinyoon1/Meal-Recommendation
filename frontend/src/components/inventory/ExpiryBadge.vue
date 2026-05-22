@@ -38,5 +38,11 @@ const label = computed<string>(() => {
 </script>
 
 <template>
-  <AppBadge v-if="day != null" :tone="tone" :variant="variant">{{ label }}</AppBadge>
+  <AppBadge
+    v-if="day != null"
+    :tone="tone"
+    :variant="variant"
+  >
+    {{ label }}
+  </AppBadge>
 </template>

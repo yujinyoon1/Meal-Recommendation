@@ -46,24 +46,55 @@ onMounted(load);
     <div class="m-stripe" />
     <header class="detail__head">
       <span class="label-uppercase eyebrow">HISTORY DETAIL</span>
-      <h1 v-if="data">RECOMMENDATION #{{ data.recommendation_id }}</h1>
+      <h1 v-if="data">
+        RECOMMENDATION #{{ data.recommendation_id }}
+      </h1>
     </header>
 
-    <p v-if="loading" class="muted">불러오는 중…</p>
-    <p v-else-if="error" class="error">{{ error }}</p>
+    <p
+      v-if="loading"
+      class="muted"
+    >
+      불러오는 중…
+    </p>
+    <p
+      v-else-if="error"
+      class="error"
+    >
+      {{ error }}
+    </p>
 
     <template v-else-if="data">
       <div class="recipes">
-        <RecipeCard v-for="(r, i) in data.recipes" :key="i" :recipe="r" :index="i" />
+        <RecipeCard
+          v-for="(r, i) in data.recipes"
+          :key="i"
+          :recipe="r"
+          :index="i"
+        />
       </div>
 
-      <NutritionChart v-if="data.nutrition" :nutrition="data.nutrition" />
+      <NutritionChart
+        v-if="data.nutrition"
+        :nutrition="data.nutrition"
+      />
 
-      <section class="feedback-list" v-if="data.feedbacks.length">
+      <section
+        v-if="data.feedbacks.length"
+        class="feedback-list"
+      >
         <h2>FEEDBACKS</h2>
         <ul>
-          <li v-for="f in data.feedbacks" :key="f.id">
-            <AppBadge tone="warn" variant="solid">★ {{ f.rating }}</AppBadge>
+          <li
+            v-for="f in data.feedbacks"
+            :key="f.id"
+          >
+            <AppBadge
+              tone="warn"
+              variant="solid"
+            >
+              ★ {{ f.rating }}
+            </AppBadge>
             <span class="comment">{{ f.comment || '(코멘트 없음)' }}</span>
             <span class="when">{{ new Date(f.created_at).toLocaleString('ko-KR') }}</span>
           </li>
@@ -75,7 +106,9 @@ onMounted(load);
         @submitted="onSubmitted"
       />
 
-      <p class="disclaimer">{{ data.disclaimer }}</p>
+      <p class="disclaimer">
+        {{ data.disclaimer }}
+      </p>
     </template>
   </section>
 </template>

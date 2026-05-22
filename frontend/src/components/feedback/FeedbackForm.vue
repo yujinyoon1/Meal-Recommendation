@@ -38,8 +38,17 @@ async function onSubmit() {
 </script>
 
 <template>
-  <AppCard eyebrow="FEEDBACK" title="이 추천은 어땠나요?" variant="soft" padding="lg">
-    <div class="stars" role="radiogroup" aria-label="별점">
+  <AppCard
+    eyebrow="FEEDBACK"
+    title="이 추천은 어땠나요?"
+    variant="soft"
+    padding="lg"
+  >
+    <div
+      class="stars"
+      role="radiogroup"
+      aria-label="별점"
+    >
       <button
         v-for="i in 5"
         :key="i"
@@ -49,7 +58,9 @@ async function onSubmit() {
         :aria-checked="i === rating"
         role="radio"
         @click="rating = i"
-      >★</button>
+      >
+        ★
+      </button>
       <span class="stars__label">{{ rating || '—' }} / 5</span>
     </div>
     <textarea
@@ -61,15 +72,31 @@ async function onSubmit() {
     />
     <template #footer>
       <div class="actions">
-        <AppButton variant="primary" :disabled="submitting" @click="onSubmit">
+        <AppButton
+          variant="primary"
+          :disabled="submitting"
+          @click="onSubmit"
+        >
           {{ submitting ? 'SENDING…' : 'SUBMIT FEEDBACK' }}
         </AppButton>
       </div>
     </template>
-    <AppToast :open="ok" tone="success" title="THANKS" @close="ok = false">
+    <AppToast
+      :open="ok"
+      tone="success"
+      title="THANKS"
+      @close="ok = false"
+    >
       피드백이 저장되었습니다. 다음 추천에 반영됩니다.
     </AppToast>
-    <AppToast :open="!!error" tone="error" title="ERROR" @close="error = null">{{ error }}</AppToast>
+    <AppToast
+      :open="!!error"
+      tone="error"
+      title="ERROR"
+      @close="error = null"
+    >
+      {{ error }}
+    </AppToast>
   </AppCard>
 </template>
 

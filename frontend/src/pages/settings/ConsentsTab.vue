@@ -62,13 +62,28 @@ onMounted(load);
 
 <template>
   <section class="tab">
-    <p v-if="loading" class="muted">불러오는 중…</p>
-    <ul v-else class="list">
-      <li v-for="t in TYPES" :key="t.type" class="row">
+    <p
+      v-if="loading"
+      class="muted"
+    >
+      불러오는 중…
+    </p>
+    <ul
+      v-else
+      class="list"
+    >
+      <li
+        v-for="t in TYPES"
+        :key="t.type"
+        class="row"
+      >
         <div class="row__text">
           <span class="row__label">
             {{ t.label }}
-            <span v-if="t.required" class="req">[필수]</span>
+            <span
+              v-if="t.required"
+              class="req"
+            >[필수]</span>
           </span>
           <span class="row__hint">{{ t.hint }}</span>
         </div>
@@ -78,14 +93,24 @@ onMounted(load);
             :checked="state[t.type] ?? false"
             :disabled="t.required || saving"
             @change="toggle(t.type, ($event.target as HTMLInputElement).checked)"
-          />
+          >
           <span class="switch__track" />
         </label>
       </li>
     </ul>
-    <AppButton variant="ghost" @click="load">REFRESH</AppButton>
+    <AppButton
+      variant="ghost"
+      @click="load"
+    >
+      REFRESH
+    </AppButton>
 
-    <AppToast :open="!!toast" :tone="toast?.tone ?? 'info'" title="CONSENTS" @close="toast = null">
+    <AppToast
+      :open="!!toast"
+      :tone="toast?.tone ?? 'info'"
+      title="CONSENTS"
+      @close="toast = null"
+    >
       {{ toast?.msg }}
     </AppToast>
   </section>

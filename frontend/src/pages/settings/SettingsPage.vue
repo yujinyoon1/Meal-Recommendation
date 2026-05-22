@@ -22,7 +22,10 @@ const TABS: Array<{ key: Tab; label: string }> = [
       <h1>계정 & 개인정보</h1>
     </header>
 
-    <nav class="tabs" role="tablist">
+    <nav
+      class="tabs"
+      role="tablist"
+    >
       <button
         v-for="t in TABS"
         :key="t.key"
@@ -31,10 +34,15 @@ const TABS: Array<{ key: Tab; label: string }> = [
         role="tab"
         :aria-selected="active === t.key"
         @click="active = t.key"
-      >{{ t.label }}</button>
+      >
+        {{ t.label }}
+      </button>
     </nav>
 
-    <div class="panel" role="tabpanel">
+    <div
+      class="panel"
+      role="tabpanel"
+    >
       <ConsentsTab v-if="active === 'consents'" />
       <DataExportTab v-else-if="active === 'export'" />
       <WithdrawTab v-else-if="active === 'withdraw'" />

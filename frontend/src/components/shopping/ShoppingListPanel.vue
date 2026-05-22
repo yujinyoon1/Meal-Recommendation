@@ -69,28 +69,73 @@ onMounted(load);
 </script>
 
 <template>
-  <AppCard eyebrow="SHOPPING LIST" :title="data?.items?.length ? `${data.items.length} ITEMS` : 'NO GAPS'" variant="default" padding="lg" m-stripe>
-    <p v-if="loading" class="muted">불러오는 중…</p>
-    <p v-else-if="error" class="error">{{ error }}</p>
+  <AppCard
+    eyebrow="SHOPPING LIST"
+    :title="data?.items?.length ? `${data.items.length} ITEMS` : 'NO GAPS'"
+    variant="default"
+    padding="lg"
+    m-stripe
+  >
+    <p
+      v-if="loading"
+      class="muted"
+    >
+      불러오는 중…
+    </p>
+    <p
+      v-else-if="error"
+      class="error"
+    >
+      {{ error }}
+    </p>
 
     <template v-else-if="data">
-      <div v-if="data.warnings.length" class="warnings">
-        <AppBadge v-for="(w, i) in data.warnings" :key="i" tone="warn" variant="solid">{{ w }}</AppBadge>
+      <div
+        v-if="data.warnings.length"
+        class="warnings"
+      >
+        <AppBadge
+          v-for="(w, i) in data.warnings"
+          :key="i"
+          tone="warn"
+          variant="solid"
+        >
+          {{ w }}
+        </AppBadge>
       </div>
 
-      <p v-if="!data.items.length" class="muted">부족한 영양소가 감지되지 않았습니다. 추천 식단으로 충분합니다.</p>
+      <p
+        v-if="!data.items.length"
+        class="muted"
+      >
+        부족한 영양소가 감지되지 않았습니다. 추천 식단으로 충분합니다.
+      </p>
 
-      <div v-else class="groups">
-        <section v-for="(items, cat) in grouped" :key="cat" class="group">
+      <div
+        v-else
+        class="groups"
+      >
+        <section
+          v-for="(items, cat) in grouped"
+          :key="cat"
+          class="group"
+        >
           <header class="group__head">
             <span class="label-uppercase">{{ cat }}</span>
             <span class="group__count">{{ items.length }}</span>
           </header>
           <ul>
-            <li v-for="it in items" :key="it.id" class="item">
+            <li
+              v-for="it in items"
+              :key="it.id"
+              class="item"
+            >
               <span class="item__name">{{ it.name }}</span>
               <span class="item__qty">{{ it.suggested_qty }}</span>
-              <span class="item__reason" :title="it.reason">{{ it.reason }}</span>
+              <span
+                class="item__reason"
+                :title="it.reason"
+              >{{ it.reason }}</span>
             </li>
           </ul>
         </section>
@@ -106,7 +151,12 @@ onMounted(load);
         >
           {{ copied ? 'COPIED ✓' : 'COPY ALL' }}
         </AppButton>
-        <AppButton variant="ghost" @click="load">RELOAD</AppButton>
+        <AppButton
+          variant="ghost"
+          @click="load"
+        >
+          RELOAD
+        </AppButton>
       </div>
     </template>
   </AppCard>

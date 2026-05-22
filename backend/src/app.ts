@@ -1,4 +1,4 @@
-import express, { Express } from 'express';
+import express, { type Express, type RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import { requestIdMiddleware } from './middleware/requestId.js';
 import { applySecurity } from './middleware/security.js';
@@ -27,8 +27,8 @@ export function createApp(): Express {
 
   app.use(requestIdMiddleware);
   app.use(httpLogger);
-  app.use(express.json({ limit: '256kb' }));
-  app.use(cookieParser());
+  app.use(express.json({ limit: '256kb' }) as RequestHandler);
+  app.use(cookieParser() as RequestHandler);
 
   applySecurity(app);
 

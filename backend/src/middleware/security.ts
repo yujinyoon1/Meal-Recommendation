@@ -1,11 +1,11 @@
-import type { Express } from 'express';
+import type { Express, RequestHandler } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { corsOrigins } from '../config/env.js';
 
 export function applySecurity(app: Express): void {
-  app.use(helmet());
+  app.use(helmet() as RequestHandler);
 
   app.use(
     cors({
@@ -16,7 +16,7 @@ export function applySecurity(app: Express): void {
         return cb(new Error(`CORS blocked: ${origin}`));
       },
       credentials: true,
-    }),
+    }) as RequestHandler,
   );
 
   // 글로벌 rate limit 60/min/IP (recommendation은 별도 라우트에서 추가 제한)

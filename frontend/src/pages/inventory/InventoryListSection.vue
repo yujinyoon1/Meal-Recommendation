@@ -23,12 +23,6 @@ const emit = defineEmits<{ (e: 'changed'): void }>();
 
 const sorted = computed(() => props.items.slice());
 
-function dayDiff(iso?: string | null): number | null {
-  if (!iso) return null;
-  const t = new Date(iso + 'T00:00:00').getTime();
-  return Math.ceil((t - Date.now()) / (24 * 3600 * 1000));
-}
-
 async function markConsumed(id: number) {
   await api.patch(`/inventory/items/${id}`, { consumed: true });
   emit('changed');
@@ -46,24 +40,64 @@ async function removeItem(id: number) {
       <span class="list__count">{{ items.length }}</span>
     </header>
 
-    <p v-if="!items.length" class="list__empty">아직 식재료가 없습니다.</p>
+    <p
+      v-if="!items.length"
+      class="list__empty"
+    >
+      아직 식재료가 없습니다.
+    </p>
 
-    <div v-else class="grid">
-      <AppCard v-for="it in sorted" :key="it.id" variant="soft" padding="md">
+    <div
+      v-else
+      class="grid"
+    >
+      <AppCard
+        v-for="it in sorted"
+        :key="it.id"
+        variant="soft"
+        padding="md"
+      >
         <header class="card-head">
           <strong class="card-head__name">{{ it.normalized ?? it.raw_text }}</strong>
-          <span v-if="it.quantity" class="card-head__qty">{{ it.quantity }}{{ it.unit ?? '' }}</span>
+          <span
+            v-if="it.quantity"
+            class="card-head__qty"
+          >{{ it.quantity }}{{ it.unit ?? '' }}</span>
         </header>
-        <p class="card-head__raw">{{ it.raw_text }}</p>
+        <p class="card-head__raw">
+          {{ it.raw_text }}
+        </p>
         <div class="card-head__badges">
           <ExpiryBadge :expires-at="it.expires_at ?? null" />
-          <AppBadge v-if="!it.food_id" tone="warn" variant="outline">UNMATCHED</AppBadge>
-          <AppBadge v-if="it.warning" tone="warn" variant="outline">{{ it.warning }}</AppBadge>
+          <AppBadge
+            v-if="!it.food_id"
+            tone="warn"
+            variant="outline"
+          >
+            UNMATCHED
+          </AppBadge>
+          <AppBadge
+            v-if="it.warning"
+            tone="warn"
+            variant="outline"
+          >
+            {{ it.warning }}
+          </AppBadge>
         </div>
         <template #footer>
           <div class="card-actions">
-            <AppButton variant="ghost" @click="markConsumed(it.id)">소모</AppButton>
-            <AppButton variant="ghost" @click="removeItem(it.id)">삭제</AppButton>
+            <AppButton
+              variant="ghost"
+              @click="markConsumed(it.id)"
+            >
+              소모
+            </AppButton>
+            <AppButton
+              variant="ghost"
+              @click="removeItem(it.id)"
+            >
+              삭제
+            </AppButton>
           </div>
         </template>
       </AppCard>

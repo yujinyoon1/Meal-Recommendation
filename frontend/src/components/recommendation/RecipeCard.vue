@@ -10,37 +10,73 @@ const showSteps = ref(true);
 </script>
 
 <template>
-  <AppCard variant="elevated" padding="lg" :m-stripe="index === 0">
+  <AppCard
+    variant="elevated"
+    padding="lg"
+    :m-stripe="index === 0"
+  >
     <header class="recipe-head">
       <span class="label-uppercase recipe-head__eyebrow">RECIPE {{ index + 1 }}</span>
-      <h3 class="recipe-head__name">{{ recipe.name }}</h3>
+      <h3 class="recipe-head__name">
+        {{ recipe.name }}
+      </h3>
       <div class="recipe-head__meta">
-        <AppBadge tone="neutral" variant="outline">{{ recipe.est_cooking_min }}분</AppBadge>
-        <AppBadge :tone="recipe.difficulty === 'hard' ? 'red' : 'neutral'" variant="outline">
+        <AppBadge
+          tone="neutral"
+          variant="outline"
+        >
+          {{ recipe.est_cooking_min }}분
+        </AppBadge>
+        <AppBadge
+          :tone="recipe.difficulty === 'hard' ? 'red' : 'neutral'"
+          variant="outline"
+        >
           {{ recipe.difficulty.toUpperCase() }}
         </AppBadge>
       </div>
-      <p v-if="recipe.description" class="recipe-head__desc">{{ recipe.description }}</p>
+      <p
+        v-if="recipe.description"
+        class="recipe-head__desc"
+      >
+        {{ recipe.description }}
+      </p>
     </header>
 
     <section class="ingredients">
       <span class="label-uppercase">INGREDIENTS</span>
       <ul>
-        <li v-for="(ing, i) in recipe.ingredients" :key="i">
+        <li
+          v-for="(ing, i) in recipe.ingredients"
+          :key="i"
+        >
           <span class="ing__name">{{ ing.name }}</span>
           <span class="ing__qty">{{ ing.quantity }} {{ ing.unit }}</span>
-          <span v-if="ing.substitute" class="ing__sub">↔ {{ ing.substitute }}</span>
+          <span
+            v-if="ing.substitute"
+            class="ing__sub"
+          >↔ {{ ing.substitute }}</span>
         </li>
       </ul>
     </section>
 
     <section class="steps">
-      <button class="steps__toggle label-uppercase" @click="showSteps = !showSteps">
+      <button
+        class="steps__toggle label-uppercase"
+        @click="showSteps = !showSteps"
+      >
         STEPS
-        <span class="steps__chevron" :class="{ open: showSteps }">▾</span>
+        <span
+          class="steps__chevron"
+          :class="{ open: showSteps }"
+        >▾</span>
       </button>
       <ol v-if="showSteps">
-        <li v-for="(s, i) in recipe.steps" :key="i">{{ s }}</li>
+        <li
+          v-for="(s, i) in recipe.steps"
+          :key="i"
+        >
+          {{ s }}
+        </li>
       </ol>
     </section>
   </AppCard>

@@ -43,21 +43,45 @@ const result = computed(() => store.current);
     <header class="result__head">
       <span class="label-uppercase eyebrow">RECOMMENDATION</span>
       <h1>오늘의 한 끼</h1>
-      <div class="result__meta" v-if="result">
-        <AppBadge :tone="result.status === 'validated' ? 'success' : 'red'" variant="solid">
+      <div
+        v-if="result"
+        class="result__meta"
+      >
+        <AppBadge
+          :tone="result.status === 'validated' ? 'success' : 'red'"
+          variant="solid"
+        >
           {{ result.status.toUpperCase() }}
         </AppBadge>
-        <AppBadge tone="neutral" variant="outline">ID {{ result.recommendation_id }}</AppBadge>
+        <AppBadge
+          tone="neutral"
+          variant="outline"
+        >
+          ID {{ result.recommendation_id }}
+        </AppBadge>
       </div>
     </header>
 
-    <p v-if="store.loading" class="result__loading">불러오는 중…</p>
+    <p
+      v-if="store.loading"
+      class="result__loading"
+    >
+      불러오는 중…
+    </p>
 
     <div v-else-if="result">
-      <div v-if="result.warnings.length" class="warnings">
+      <div
+        v-if="result.warnings.length"
+        class="warnings"
+      >
         <span class="label-uppercase">WARNINGS</span>
         <ul>
-          <li v-for="(w, i) in result.warnings" :key="i">{{ w }}</li>
+          <li
+            v-for="(w, i) in result.warnings"
+            :key="i"
+          >
+            {{ w }}
+          </li>
         </ul>
       </div>
 
@@ -70,7 +94,10 @@ const result = computed(() => store.current);
         />
       </div>
 
-      <NutritionChart v-if="result.nutrition" :nutrition="result.nutrition" />
+      <NutritionChart
+        v-if="result.nutrition"
+        :nutrition="result.nutrition"
+      />
 
       <ShoppingListPanel
         v-if="result.status === 'validated'"
@@ -82,15 +109,32 @@ const result = computed(() => store.current);
         :recommendation-id="result.recommendation_id"
       />
 
-      <p class="disclaimer">{{ result.disclaimer }}</p>
+      <p class="disclaimer">
+        {{ result.disclaimer }}
+      </p>
 
       <footer class="result__nav">
-        <AppButton variant="outline" @click="router.push('/inventory')">← INVENTORY</AppButton>
-        <AppButton variant="primary" @click="router.push('/dashboard')">DASHBOARD →</AppButton>
+        <AppButton
+          variant="outline"
+          @click="router.push('/inventory')"
+        >
+          ← INVENTORY
+        </AppButton>
+        <AppButton
+          variant="primary"
+          @click="router.push('/dashboard')"
+        >
+          DASHBOARD →
+        </AppButton>
       </footer>
     </div>
 
-    <AppToast :open="!!store.error" tone="error" title="ERROR" @close="store.error = null">
+    <AppToast
+      :open="!!store.error"
+      tone="error"
+      title="ERROR"
+      @close="store.error = null"
+    >
       {{ store.error }}
     </AppToast>
   </section>

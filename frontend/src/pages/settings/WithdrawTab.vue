@@ -39,7 +39,12 @@ async function onConfirm() {
 
 <template>
   <section class="tab">
-    <AppCard eyebrow="WITHDRAW" title="회원 탈퇴" variant="default" padding="lg">
+    <AppCard
+      eyebrow="WITHDRAW"
+      title="회원 탈퇴"
+      variant="default"
+      padding="lg"
+    >
       <p class="warn">
         탈퇴 시 즉시 로그아웃되며, <strong>30일 grace 기간</strong> 후 본인 모든 데이터가 영구 삭제됩니다.
         grace 기간 내 재로그인 복구는 지원되지 않습니다.
@@ -50,10 +55,17 @@ async function onConfirm() {
         <li>이메일 / 비밀번호 재사용 불가 (30일 grace 동안)</li>
       </ul>
       <template #footer>
-        <AppButton v-if="!confirming" variant="outline" @click="confirming = true">
+        <AppButton
+          v-if="!confirming"
+          variant="outline"
+          @click="confirming = true"
+        >
           PROCEED TO WITHDRAW
         </AppButton>
-        <div v-else class="confirm">
+        <div
+          v-else
+          class="confirm"
+        >
           <AppInput
             v-model="password"
             type="password"
@@ -67,8 +79,17 @@ async function onConfirm() {
             placeholder="떠나시는 이유를 알려주시면 도움이 됩니다."
           />
           <div class="confirm__actions">
-            <AppButton variant="ghost" @click="confirming = false; password = ''; reason = ''">CANCEL</AppButton>
-            <AppButton variant="primary" :disabled="submitting" @click="onConfirm">
+            <AppButton
+              variant="ghost"
+              @click="confirming = false; password = ''; reason = ''"
+            >
+              CANCEL
+            </AppButton>
+            <AppButton
+              variant="primary"
+              :disabled="submitting"
+              @click="onConfirm"
+            >
               {{ submitting ? 'WITHDRAWING…' : 'CONFIRM WITHDRAW' }}
             </AppButton>
           </div>
@@ -76,7 +97,14 @@ async function onConfirm() {
       </template>
     </AppCard>
 
-    <AppToast :open="!!error" tone="error" title="ERROR" @close="error = null">{{ error }}</AppToast>
+    <AppToast
+      :open="!!error"
+      tone="error"
+      title="ERROR"
+      @close="error = null"
+    >
+      {{ error }}
+    </AppToast>
   </section>
 </template>
 

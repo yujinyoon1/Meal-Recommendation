@@ -32,23 +32,56 @@ async function onSubmit() {
 <template>
   <section class="auth-page">
     <div class="m-stripe" />
-    <h1 class="auth-page__title">LOG IN</h1>
-    <p class="auth-page__sub">계속해서 추천받기.</p>
+    <h1 class="auth-page__title">
+      LOG IN
+    </h1>
+    <p class="auth-page__sub">
+      계속해서 추천받기.
+    </p>
 
-    <form class="auth-form" @submit.prevent="onSubmit">
-      <AppInput v-model="form.email" label="EMAIL" type="email" autocomplete="email" required />
-      <AppInput v-model="form.password" label="PASSWORD" type="password" autocomplete="current-password" required />
-      <AppButton type="submit" variant="primary" :disabled="loading" block>
+    <form
+      class="auth-form"
+      @submit.prevent="onSubmit"
+    >
+      <AppInput
+        v-model="form.email"
+        label="EMAIL"
+        type="email"
+        autocomplete="email"
+        required
+      />
+      <AppInput
+        v-model="form.password"
+        label="PASSWORD"
+        type="password"
+        autocomplete="current-password"
+        required
+      />
+      <AppButton
+        type="submit"
+        variant="primary"
+        :disabled="loading"
+        block
+      >
         {{ loading ? 'SIGNING IN…' : 'LOG IN' }}
       </AppButton>
 
       <p class="auth-form__alt">
         처음이신가요?
-        <router-link to="/register">SIGN UP</router-link>
+        <router-link to="/register">
+          SIGN UP
+        </router-link>
       </p>
     </form>
 
-    <AppToast :open="!!error" tone="error" title="ERROR" @close="error = null">{{ error }}</AppToast>
+    <AppToast
+      :open="!!error"
+      tone="error"
+      title="ERROR"
+      @close="error = null"
+    >
+      {{ error }}
+    </AppToast>
   </section>
 </template>
 

@@ -54,33 +54,82 @@ async function onSubmit() {
 <template>
   <section class="auth-page">
     <div class="m-stripe" />
-    <h1 class="auth-page__title">SIGN UP</h1>
-    <p class="auth-page__sub">한 끼, 데이터로 정확히.</p>
+    <h1 class="auth-page__title">
+      SIGN UP
+    </h1>
+    <p class="auth-page__sub">
+      한 끼, 데이터로 정확히.
+    </p>
 
-    <form class="auth-form" @submit.prevent="onSubmit">
-      <AppInput v-model="form.email" label="EMAIL" type="email" autocomplete="email" required />
-      <AppInput v-model="form.password" label="PASSWORD" type="password" autocomplete="new-password" hint="최소 8자" required />
-      <AppInput v-model="form.displayName" label="DISPLAY NAME" />
+    <form
+      class="auth-form"
+      @submit.prevent="onSubmit"
+    >
+      <AppInput
+        v-model="form.email"
+        label="EMAIL"
+        type="email"
+        autocomplete="email"
+        required
+      />
+      <AppInput
+        v-model="form.password"
+        label="PASSWORD"
+        type="password"
+        autocomplete="new-password"
+        hint="최소 8자"
+        required
+      />
+      <AppInput
+        v-model="form.displayName"
+        label="DISPLAY NAME"
+      />
 
       <fieldset class="consents">
-        <legend class="label-uppercase">CONSENTS</legend>
-        <label><input v-model="form.consents.terms" type="checkbox" /> [필수] 서비스 이용약관</label>
-        <label><input v-model="form.consents.privacy" type="checkbox" /> [필수] 개인정보 처리방침</label>
-        <label><input v-model="form.consents.sensitive_health" type="checkbox" /> [선택] 민감 건강정보 처리</label>
-        <label><input v-model="form.consents.marketing" type="checkbox" /> [선택] 마케팅 정보 수신</label>
+        <legend class="label-uppercase">
+          CONSENTS
+        </legend>
+        <label><input
+          v-model="form.consents.terms"
+          type="checkbox"
+        > [필수] 서비스 이용약관</label>
+        <label><input
+          v-model="form.consents.privacy"
+          type="checkbox"
+        > [필수] 개인정보 처리방침</label>
+        <label><input
+          v-model="form.consents.sensitive_health"
+          type="checkbox"
+        > [선택] 민감 건강정보 처리</label>
+        <label><input
+          v-model="form.consents.marketing"
+          type="checkbox"
+        > [선택] 마케팅 정보 수신</label>
       </fieldset>
 
-      <AppButton type="submit" variant="primary" :disabled="loading" block>
+      <AppButton
+        type="submit"
+        variant="primary"
+        :disabled="loading"
+        block
+      >
         {{ loading ? 'CREATING…' : 'CREATE ACCOUNT' }}
       </AppButton>
 
       <p class="auth-form__alt">
         이미 계정이 있으신가요?
-        <router-link to="/login">LOG IN</router-link>
+        <router-link to="/login">
+          LOG IN
+        </router-link>
       </p>
     </form>
 
-    <AppToast :open="!!error" tone="error" title="ERROR" @close="error = null">
+    <AppToast
+      :open="!!error"
+      tone="error"
+      title="ERROR"
+      @close="error = null"
+    >
       {{ error }}
     </AppToast>
   </section>

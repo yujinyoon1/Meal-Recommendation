@@ -67,7 +67,11 @@ onMounted(reload);
       />
       <template #footer>
         <div class="inv__actions">
-          <AppButton variant="outline" :disabled="adding || !text.trim()" @click="onAdd">
+          <AppButton
+            variant="outline"
+            :disabled="adding || !text.trim()"
+            @click="onAdd"
+          >
             {{ adding ? 'ADDING…' : 'ADD TO INVENTORY' }}
           </AppButton>
           <AppButton
@@ -81,9 +85,19 @@ onMounted(reload);
       </template>
     </AppCard>
 
-    <InventoryListSection :items="items" @changed="reload" />
+    <InventoryListSection
+      :items="items"
+      @changed="reload"
+    />
 
-    <AppToast :open="!!error" tone="error" title="ERROR" @close="error = null">{{ error }}</AppToast>
+    <AppToast
+      :open="!!error"
+      tone="error"
+      title="ERROR"
+      @close="error = null"
+    >
+      {{ error }}
+    </AppToast>
   </section>
 </template>
 

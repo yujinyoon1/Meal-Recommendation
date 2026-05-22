@@ -51,26 +51,62 @@ function removeDisease(v: string) {
     <div class="chip-row">
       <span class="label-uppercase">ALLERGIES</span>
       <div class="chips">
-        <AppBadge v-for="a in modelValue.allergies" :key="a" tone="red" variant="solid">
-          {{ a }} <button class="chip-x" @click="removeAllergy(a)">×</button>
+        <AppBadge
+          v-for="a in modelValue.allergies"
+          :key="a"
+          tone="red"
+          variant="solid"
+        >
+          {{ a }} <button
+            class="chip-x"
+            @click="removeAllergy(a)"
+          >
+            ×
+          </button>
         </AppBadge>
       </div>
       <div class="row">
-        <AppInput v-model="allergyInput" placeholder="예: 땅콩" />
-        <AppButton variant="outline" @click="addAllergy">ADD</AppButton>
+        <AppInput
+          v-model="allergyInput"
+          placeholder="예: 땅콩"
+        />
+        <AppButton
+          variant="outline"
+          @click="addAllergy"
+        >
+          ADD
+        </AppButton>
       </div>
     </div>
 
     <div class="chip-row">
       <span class="label-uppercase">DISEASES</span>
       <div class="chips">
-        <AppBadge v-for="d in modelValue.diseases" :key="d" tone="warn" variant="outline">
-          {{ d }} <button class="chip-x" @click="removeDisease(d)">×</button>
+        <AppBadge
+          v-for="d in modelValue.diseases"
+          :key="d"
+          tone="warn"
+          variant="outline"
+        >
+          {{ d }} <button
+            class="chip-x"
+            @click="removeDisease(d)"
+          >
+            ×
+          </button>
         </AppBadge>
       </div>
       <div class="row">
-        <AppInput v-model="diseaseInput" placeholder="예: 고혈압" />
-        <AppButton variant="outline" @click="addDisease">ADD</AppButton>
+        <AppInput
+          v-model="diseaseInput"
+          placeholder="예: 고혈압"
+        />
+        <AppButton
+          variant="outline"
+          @click="addDisease"
+        >
+          ADD
+        </AppButton>
       </div>
     </div>
 

@@ -3,6 +3,7 @@
  * 안전 idempotent (ON DUPLICATE KEY UPDATE).
  */
 import 'dotenv/config';
+import type { RowDataPacket } from 'mysql2';
 import { pool } from '../pool.js';
 
 const ALLERGENS: Array<{ code: string; ko: string; en: string }> = [
@@ -60,11 +61,11 @@ async function upsertAliases() {
   // alias는 foods.id가 필요 — seed-foods 이후에 매칭되는 alias만 활성화.
   // 여기서는 foods 시드와 별개로 동작하도록, food_code 가 실제 foods.code 와 매칭되는 경우만 insert.
   for (const al of ALIASES) {
-    const [rows] = await pool.query<{ id: number }[] & { length: number }>(
+    const [rows] = await pool.query<(RowDataPacket & { id: number })[]>(
       'SELECT id FROM foods WHERE code = ?',
       [al.food_code],
     );
-    const list = rows as unknown as { id: number }[];
+    const list = rows;
     if (!list || list.length === 0) {
       // eslint-disable-next-line no-console
       console.warn(`[seed-masters] skip alias "${al.alias}" — foods.code "${al.food_code}" not found`);

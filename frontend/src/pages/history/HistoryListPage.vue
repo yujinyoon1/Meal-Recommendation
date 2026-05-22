@@ -65,7 +65,12 @@ onUnmounted(() => { io?.disconnect(); });
       <h1>지난 추천</h1>
     </header>
 
-    <p v-if="!items.length && !loading" class="empty">아직 추천 이력이 없습니다.</p>
+    <p
+      v-if="!items.length && !loading"
+      class="empty"
+    >
+      아직 추천 이력이 없습니다.
+    </p>
 
     <div class="grid">
       <AppCard
@@ -76,27 +81,55 @@ onUnmounted(() => { io?.disconnect(); });
       >
         <header class="row">
           <strong>#{{ it.id }}</strong>
-          <AppBadge :tone="it.status === 'validated' ? 'success' : (it.status === 'rejected' ? 'red' : 'neutral')" variant="outline">
+          <AppBadge
+            :tone="it.status === 'validated' ? 'success' : (it.status === 'rejected' ? 'red' : 'neutral')"
+            variant="outline"
+          >
             {{ it.status.toUpperCase() }}
           </AppBadge>
         </header>
-        <p class="meta">{{ fmt(it.request_at) }}</p>
+        <p class="meta">
+          {{ fmt(it.request_at) }}
+        </p>
         <p class="metrics">
           <span v-if="it.total_kcal != null">{{ it.total_kcal }} kcal</span>
-          <span v-if="it.rating != null" class="rating">★ {{ it.rating }}/5</span>
+          <span
+            v-if="it.rating != null"
+            class="rating"
+          >★ {{ it.rating }}/5</span>
         </p>
         <template #footer>
           <RouterLink :to="`/recommendation/${it.id}`">
-            <AppButton variant="ghost">상세 →</AppButton>
+            <AppButton variant="ghost">
+              상세 →
+            </AppButton>
           </RouterLink>
         </template>
       </AppCard>
     </div>
 
-    <div ref="sentinelRef" class="sentinel" />
-    <p v-if="loading" class="loading">불러오는 중…</p>
-    <p v-if="done && items.length" class="done">— 끝 —</p>
-    <p v-if="error" class="error">{{ error }}</p>
+    <div
+      ref="sentinelRef"
+      class="sentinel"
+    />
+    <p
+      v-if="loading"
+      class="loading"
+    >
+      불러오는 중…
+    </p>
+    <p
+      v-if="done && items.length"
+      class="done"
+    >
+      — 끝 —
+    </p>
+    <p
+      v-if="error"
+      class="error"
+    >
+      {{ error }}
+    </p>
   </section>
 </template>
 

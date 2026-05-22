@@ -30,8 +30,9 @@ beforeEach(() => {
 
 describe('computeGap', () => {
   it('단백질 부족 시 단백질 후보 식재료를 반환', async () => {
-    // preferredCategories 쿼리는 결과 있음
+    // protein 쿼리 + calories 쿼리(0.4 < 0.5 도 트리거) 두 mock 을 호출 순서대로 등록
     queryMock.mockResolvedValueOnce([[row('닭가슴살', '육류', { protein_g: '31' }), row('두부', '콩류', { protein_g: '8' })]]);
+    queryMock.mockResolvedValueOnce([[row('백미밥', '곡류', { kcal_per_100g: '370' })]]);
 
     const out = await computeGap({
       total_kcal: 800,
@@ -40,9 +41,6 @@ describe('computeGap', () => {
       sodium_mg: 1000,
       rda_ratio: { calories: 0.4, protein: 0.36, fiber: 1.0, sodium: 0.5 },
     });
-
-    // calories < 0.5 도 트리거 — 추가 query (곡류) 가 호출됨
-    queryMock.mockResolvedValueOnce([[row('백미밥', '곡류', { kcal_per_100g: '370' })]]);
 
     expect(out.some((c) => c.reason.includes('단백질 부족'))).toBe(true);
   });

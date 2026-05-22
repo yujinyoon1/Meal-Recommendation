@@ -12,17 +12,39 @@ const isAuthPage = computed(() => route.meta.public === true);
 
 <template>
   <div class="app-shell">
-    <header v-if="!isAuthPage" class="app-header">
-      <RouterLink to="/dashboard" class="brand">🍱 mis2601</RouterLink>
+    <header
+      v-if="!isAuthPage"
+      class="app-header"
+    >
+      <RouterLink
+        to="/dashboard"
+        class="brand"
+      >
+        🍱 mis2601
+      </RouterLink>
       <nav class="primary">
-        <RouterLink to="/dashboard">대시보드</RouterLink>
-        <RouterLink to="/inventory">식재료</RouterLink>
-        <RouterLink to="/history">이력</RouterLink>
-        <RouterLink to="/settings">설정</RouterLink>
+        <RouterLink to="/dashboard">
+          대시보드
+        </RouterLink>
+        <RouterLink to="/inventory">
+          식재료
+        </RouterLink>
+        <RouterLink to="/history">
+          이력
+        </RouterLink>
+        <RouterLink to="/settings">
+          설정
+        </RouterLink>
       </nav>
       <div class="user">
         <span v-if="auth.user">{{ auth.user.displayName || auth.user.email }}</span>
-        <button v-if="auth.isAuthenticated" @click="auth.logout()" class="link">로그아웃</button>
+        <button
+          v-if="auth.isAuthenticated"
+          class="link"
+          @click="auth.logout()"
+        >
+          로그아웃
+        </button>
       </div>
     </header>
     <main class="app-main">

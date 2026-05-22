@@ -27,9 +27,18 @@ const value = computed({
 </script>
 
 <template>
-  <label class="field" :class="{ 'field--error': !!error }">
-    <span v-if="label" class="field__label label-uppercase">
-      {{ label }}<span v-if="required" class="field__req">*</span>
+  <label
+    class="field"
+    :class="{ 'field--error': !!error }"
+  >
+    <span
+      v-if="label"
+      class="field__label label-uppercase"
+    >
+      {{ label }}<span
+        v-if="required"
+        class="field__req"
+      >*</span>
     </span>
     <input
       v-model="value"
@@ -39,9 +48,15 @@ const value = computed({
       :name="name"
       :autocomplete="autocomplete"
       class="field__input"
-    />
-    <span v-if="error" class="field__error">{{ error }}</span>
-    <span v-else-if="hint" class="field__hint">{{ hint }}</span>
+    >
+    <span
+      v-if="error"
+      class="field__error"
+    >{{ error }}</span>
+    <span
+      v-else-if="hint"
+      class="field__hint"
+    >{{ hint }}</span>
   </label>
 </template>
 

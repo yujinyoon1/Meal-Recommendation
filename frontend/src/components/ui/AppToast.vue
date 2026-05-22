@@ -14,13 +14,29 @@ defineEmits<{ (e: 'close'): void }>();
 
 <template>
   <transition name="toast">
-    <div v-if="open" class="toast" :class="`toast--${tone ?? 'info'}`" role="status">
+    <div
+      v-if="open"
+      class="toast"
+      :class="`toast--${tone ?? 'info'}`"
+      role="status"
+    >
       <div class="m-stripe toast__stripe" />
       <div class="toast__body">
-        <strong v-if="title" class="toast__title label-uppercase">{{ title }}</strong>
-        <p class="toast__msg"><slot /></p>
+        <strong
+          v-if="title"
+          class="toast__title label-uppercase"
+        >{{ title }}</strong>
+        <p class="toast__msg">
+          <slot />
+        </p>
       </div>
-      <button class="toast__close" aria-label="닫기" @click="$emit('close')">×</button>
+      <button
+        class="toast__close"
+        aria-label="닫기"
+        @click="$emit('close')"
+      >
+        ×
+      </button>
     </div>
   </transition>
 </template>

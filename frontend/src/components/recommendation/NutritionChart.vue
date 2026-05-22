@@ -73,7 +73,10 @@ const barOptions = {
   <section class="chart">
     <header class="chart__head">
       <span class="label-uppercase">NUTRITION</span>
-      <span class="chart__confidence" :data-conf="nutrition.confidence">
+      <span
+        class="chart__confidence"
+        :data-conf="nutrition.confidence"
+      >
         CONFIDENCE: {{ nutrition.confidence.toUpperCase() }}
       </span>
     </header>
@@ -82,17 +85,27 @@ const barOptions = {
       <div class="chart__panel">
         <span class="label-uppercase chart__panel-label">MACRO MIX</span>
         <div class="chart__canvas">
-          <Doughnut :data="donutData" :options="donutOptions" />
+          <Doughnut
+            :data="donutData"
+            :options="donutOptions"
+          />
         </div>
-        <p class="chart__total">{{ nutrition.total_kcal }} <span>kcal</span></p>
+        <p class="chart__total">
+          {{ nutrition.total_kcal }} <span>kcal</span>
+        </p>
       </div>
 
       <div class="chart__panel">
         <span class="label-uppercase chart__panel-label">RDA RATIO</span>
         <div class="chart__canvas">
-          <Bar :data="barData" :options="barOptions" />
+          <Bar
+            :data="barData"
+            :options="barOptions"
+          />
         </div>
-        <p class="chart__hint">막대가 100% 선을 넘으면 일일 권장량 초과.</p>
+        <p class="chart__hint">
+          막대가 100% 선을 넘으면 일일 권장량 초과.
+        </p>
       </div>
     </div>
   </section>

@@ -14,16 +14,36 @@ defineProps<{
 </script>
 
 <template>
-  <article class="card" :class="[`card--${variant ?? 'default'}`, `card--pad-${padding ?? 'md'}`]">
-    <div v-if="mStripe" class="m-stripe card__stripe" />
-    <header v-if="eyebrow || title" class="card__head">
-      <span v-if="eyebrow" class="card__eyebrow label-uppercase">{{ eyebrow }}</span>
-      <h3 v-if="title" class="card__title">{{ title }}</h3>
+  <article
+    class="card"
+    :class="[`card--${variant ?? 'default'}`, `card--pad-${padding ?? 'md'}`]"
+  >
+    <div
+      v-if="mStripe"
+      class="m-stripe card__stripe"
+    />
+    <header
+      v-if="eyebrow || title"
+      class="card__head"
+    >
+      <span
+        v-if="eyebrow"
+        class="card__eyebrow label-uppercase"
+      >{{ eyebrow }}</span>
+      <h3
+        v-if="title"
+        class="card__title"
+      >
+        {{ title }}
+      </h3>
     </header>
     <div class="card__body">
       <slot />
     </div>
-    <footer v-if="$slots.footer" class="card__footer">
+    <footer
+      v-if="$slots.footer"
+      class="card__footer"
+    >
       <slot name="footer" />
     </footer>
   </article>
