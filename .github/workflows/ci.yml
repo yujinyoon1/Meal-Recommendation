@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 동일 브랜치/PR의 이전 실행은 자동 취소 (CI 비용 절감)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  backend:
+    name: backend (lint · test · build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      # package-lock.json 미생성 상태 — 첫 실행에서 install 후 커밋 권장.
+      - name: install
+        working-directory: backend
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: lint
+        working-directory: backend
+        run: npm run lint
+      - name: test (vitest unit)
+        working-directory: backend
+        # 통합 테스트는 DB가 필요해 자동 skip — 단위 테스트만 실행
+        run: npm test
+      - name: build (tsc)
+        working-directory: backend
+        run: npm run build
+
+  frontend:
+    name: frontend (lint · test · build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: install
+        working-directory: frontend
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: lint
+        working-directory: frontend
+        run: npm run lint
+      - name: test (vitest unit)
+        working-directory: frontend
+        run: npm run test:run
+      - name: build (vite + vue-tsc)
+        working-directory: frontend
+        run: npm run build
+
+  # E2E 는 백엔드 + DB 인프라가 필요하므로 별도 워크플로(또는 셀프호스팅)에서 실행.
+  # 현재는 lint/test/build 까지만 PR 게이트로 사용.
