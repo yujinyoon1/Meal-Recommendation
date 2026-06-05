@@ -85,6 +85,21 @@ const result = computed(() => store.current);
         </ul>
       </div>
 
+      <div
+        v-if="result.rationale && result.rationale.length"
+        class="rationale"
+      >
+        <span class="rationale__label">왜 이 추천일까요?</span>
+        <ul>
+          <li
+            v-for="(r, i) in result.rationale"
+            :key="i"
+          >
+            {{ r.message }}
+          </li>
+        </ul>
+      </div>
+
       <div class="recipes">
         <RecipeCard
           v-for="(r, i) in result.recipes"
@@ -146,6 +161,20 @@ const result = computed(() => store.current);
 .eyebrow { color: var(--color-muted); }
 .result__meta { display: flex; gap: var(--space-xs); }
 .result__loading { color: var(--color-muted); }
+.rationale {
+  background: var(--color-primary-pale);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+.rationale__label {
+  display: block;
+  font-weight: var(--fw-semibold);
+  margin-bottom: var(--space-xs);
+  color: var(--color-ink);
+}
+.rationale ul { margin: 0; padding-left: 1.25rem; color: var(--color-body-strong); }
 .warnings {
   border: 1px solid var(--color-m-red);
   padding: var(--space-md);

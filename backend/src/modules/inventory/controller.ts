@@ -24,6 +24,22 @@ export async function patchItem(req: Request, res: Response, next: NextFunction)
   } catch (e) { next(e); }
 }
 
+// 002 FR-011 — GET /api/inventory/expiring
+export async function getExpiring(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await service.getExpiring(req.user!.id));
+  } catch (e) { next(e); }
+}
+
+// 002 FR-010 — PATCH /api/inventory/items/:id/expiry
+export async function patchExpiry(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    const dto = service.ExpiryPatchInput.parse(req.body);
+    res.json(await service.updateExpiry(req.user!.id, id, dto));
+  } catch (e) { next(e); }
+}
+
 export async function deleteItem(req: Request, res: Response, next: NextFunction) {
   try {
     const id = z.coerce.number().int().positive().parse(req.params.id);

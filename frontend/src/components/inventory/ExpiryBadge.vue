@@ -9,7 +9,8 @@
 import { computed } from 'vue';
 import AppBadge from '@/components/ui/AppBadge.vue';
 
-const props = defineProps<{ expiresAt: string | null }>();
+// state: 서버(식품군별 차등 임계)가 판정한 임박/만료 — 주어지면 색을 우선 적용 (002 FR-011)
+const props = defineProps<{ expiresAt: string | null; state?: 'imminent' | 'expired' | null }>();
 
 const day = computed<number | null>(() => {
   if (!props.expiresAt) return null;
@@ -19,6 +20,8 @@ const day = computed<number | null>(() => {
 });
 
 const tone = computed<'red' | 'warn' | 'neutral'>(() => {
+  if (props.state === 'expired') return 'red';
+  if (props.state === 'imminent') return 'warn';
   if (day.value == null) return 'neutral';
   if (day.value < 0 || day.value <= 2) return 'red';
   if (day.value <= 7) return 'warn';
@@ -26,6 +29,7 @@ const tone = computed<'red' | 'warn' | 'neutral'>(() => {
 });
 
 const variant = computed<'solid' | 'outline'>(() => {
+  if (props.state === 'expired') return 'solid';
   return day.value != null && day.value < 0 ? 'solid' : 'outline';
 });
 

@@ -14,6 +14,37 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 const ok = ref(false);
 
+// 002 FR-002 — 추천 수정(제외할 재료). 제출 시 학습에 반영됨.
+const excludeInput = ref('');
+const excluded = ref<string[]>([]);
+const editsSaved = ref(false);
+
+function addExclude() {
+  const v = excludeInput.value.trim();
+  if (v && !excluded.value.includes(v)) excluded.value.push(v);
+  excludeInput.value = '';
+}
+function removeExclude(name: string) {
+  excluded.value = excluded.value.filter((x) => x !== name);
+}
+async function submitEdits() {
+  if (excluded.value.length === 0) return;
+  submitting.value = true;
+  error.value = null;
+  try {
+    await api.post(
+      `/recommendations/${props.recommendationId}/edits`,
+      excluded.value.map((name) => ({ action: 'exclude', target_type: 'ingredient', target_ref: name })),
+    );
+    editsSaved.value = true;
+    excluded.value = [];
+  } catch (e: unknown) {
+    error.value = (e as { response?: { data?: { message?: string } } }).response?.data?.message ?? '수정 반영 실패';
+  } finally {
+    submitting.value = false;
+  }
+}
+
 async function onSubmit() {
   if (rating.value < 1 || rating.value > 5) {
     error.value = '별점을 선택해 주세요.';
@@ -70,8 +101,49 @@ async function onSubmit() {
       rows="3"
       maxlength="1000"
     />
+    <div class="edits">
+      <p class="edits__title">맞지 않는 재료가 있나요? 제외하면 다음 추천에 반영됩니다.</p>
+      <div class="edits__input">
+        <input
+          v-model="excludeInput"
+          class="edits__field"
+          placeholder="예: 가지"
+          maxlength="120"
+          @keyup.enter="addExclude"
+        >
+        <AppButton
+          variant="ghost"
+          :disabled="!excludeInput.trim()"
+          @click="addExclude"
+        >
+          추가
+        </AppButton>
+      </div>
+      <div
+        v-if="excluded.length"
+        class="edits__chips"
+      >
+        <button
+          v-for="name in excluded"
+          :key="name"
+          type="button"
+          class="chip"
+          @click="removeExclude(name)"
+        >
+          {{ name }} ✕
+        </button>
+      </div>
+    </div>
     <template #footer>
       <div class="actions">
+        <AppButton
+          v-if="excluded.length"
+          variant="secondary"
+          :disabled="submitting"
+          @click="submitEdits"
+        >
+          제외 반영
+        </AppButton>
         <AppButton
           variant="primary"
           :disabled="submitting"
@@ -81,6 +153,14 @@ async function onSubmit() {
         </AppButton>
       </div>
     </template>
+    <AppToast
+      :open="editsSaved"
+      tone="success"
+      title="반영됨"
+      @close="editsSaved = false"
+    >
+      제외한 재료가 다음 추천에 반영됩니다.
+    </AppToast>
     <AppToast
       :open="ok"
       tone="success"
@@ -144,5 +224,29 @@ async function onSubmit() {
   border-color: var(--color-ink-deep);
   box-shadow: 0 0 0 3px var(--color-primary-pale);
 }
-.actions { display: flex; justify-content: flex-end; }
+.actions { display: flex; justify-content: flex-end; gap: var(--space-sm); }
+.edits { margin-top: var(--space-md); }
+.edits__title { color: var(--color-muted); font-size: var(--fs-body-sm); margin: 0 0 var(--space-xs); }
+.edits__input { display: flex; gap: var(--space-sm); }
+.edits__field {
+  flex: 1;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  border-radius: var(--radius-md);
+}
+.edits__field:focus { outline: none; border-color: var(--color-ink); }
+.edits__chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-sm); }
+.chip {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-body-sm);
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--color-ink); }
 </style>

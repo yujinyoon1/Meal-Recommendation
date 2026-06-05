@@ -26,12 +26,17 @@ export interface NutritionSummary {
   rda_ratio: Record<string, number>;
   confidence: 'high' | 'medium' | 'low';
 }
+export interface RationaleItem {
+  type: 'preference' | 'imminent' | 'cold_start';
+  message: string;
+}
 export interface RecommendationResult {
   recommendation_id: number;
   status: 'validated' | 'rejected' | 'failed';
   recipes: Recipe[];
   nutrition: NutritionSummary | null;
   warnings: string[];
+  rationale?: RationaleItem[];
   disclaimer: string;
 }
 

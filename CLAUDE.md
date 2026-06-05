@@ -70,6 +70,10 @@ specs/001-meal-recommendation/   현재 작업 중인 feature
 
 ## 다음 단계
 
-- Phase 3 (US1 MVP, T058~T088) — Auth/Profile/Inventory/Recommendation 오케스트레이터 + 골든패스 E2E.
-- 외부 의존성 준비 필요: `backend/.env` 실값(DB/JWT/암호화 키), 식약처 CSV → `data/foods.csv`.
-- `/speckit.implement` 재호출 시 위 범위부터 진행.
+- **현재 진행: `002-adaptive-meal-recommendation` (중기 단계)** — spec/plan/research/data-model/contracts 완료, `/speckit.tasks` 대기.
+  - 핵심: 통계 기반 선호 가중치 학습(`user_preference_weights`), 식품군별 유통기한 임박 관리(`food_group` + `food_group_expiry_thresholds`), 추천 수정 이력(`recommendation_edits`), 소비 기록(`consumption_records`), 식단 저장/재사용(`saved_meal_plans`), 건강 리포트(`health_logs`, 수동 입력), 장보기 우선순위.
+  - 신규 백엔드 모듈: `preferences`, `health`, `mealplans` (+ `inventory`/`recommendation`/`feedback`/`shopping` 확장). 도메인: `preferences`/`expiry`/`health`/`shopping`.
+  - 결정(clarify 2026-06-05): 학습=통계 가중치(ML 미도입), 알림=인앱만, 건강데이터=수동만, 임박=식품군 차등. **신규 외부 의존성·추가 LLM 호출 없음**.
+  - 규칙: 선호 가중치는 결정적 알레르기 차단(규칙 4)을 절대 무력화 금지 (spec FR-005). 마이그레이션 020~027.
+- 운영: 서비스는 `./check_project.sh {start|stop|restart|status}` (pm2: p14-frontend:9514 / p14-backend:9534).
+- 완료: 001 MVP(Auth/Profile/Inventory/Recommendation/Feedback/Shopping/History/Privacy/Bookmarks).

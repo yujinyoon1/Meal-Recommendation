@@ -2,12 +2,14 @@
 import { computed, onMounted, ref } from 'vue';
 import { api } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';
+import { useInventoryStore } from '@/stores/inventory';
 import AppCard from '@/components/ui/AppCard.vue';
 import AppBadge from '@/components/ui/AppBadge.vue';
 import AppButton from '@/components/ui/AppButton.vue';
 import { RouterLink } from 'vue-router';
 
 const auth = useAuthStore();
+const inventory = useInventoryStore();
 const inventoryCount = ref(0);
 const recent = ref<{ id: number; status: string; total_kcal: number | null } | null>(null);
 const previousLoginAt = ref<string | null>(null);
@@ -37,6 +39,8 @@ async function load() {
   } catch { /* ignore */ }
   // TODO Phase 4 — /api/recommendations 목록 API 도입 시 활성화
   recent.value = null;
+  // 002 FR-011 — 임박/만료 식재료 인앱 알림
+  await inventory.fetchExpiring();
 }
 
 onMounted(load);
@@ -81,6 +85,49 @@ onMounted(load);
     </header>
 
     <div class="grid">
+      <AppCard
+        v-if="inventory.alertCount > 0"
+        eyebrow="유통기한 알림"
+        :title="`임박 ${inventory.expiring.imminent.length} · 만료 ${inventory.expiring.expired.length}`"
+        variant="soft"
+        padding="lg"
+        accent
+      >
+        <ul class="expiring">
+          <li
+            v-for="it in inventory.expiring.imminent.slice(0, 4)"
+            :key="`im-${it.id}`"
+          >
+            <AppBadge
+              tone="warn"
+              variant="outline"
+            >
+              {{ it.days_left <= 0 ? 'D-day' : `D-${it.days_left}` }}
+            </AppBadge>
+            <span class="expiring__name">{{ it.raw_text }}</span>
+          </li>
+          <li
+            v-for="it in inventory.expiring.expired.slice(0, 2)"
+            :key="`ex-${it.id}`"
+          >
+            <AppBadge
+              tone="red"
+              variant="solid"
+            >
+              만료
+            </AppBadge>
+            <span class="expiring__name">{{ it.raw_text }}</span>
+          </li>
+        </ul>
+        <template #footer>
+          <RouterLink to="/inventory">
+            <AppButton variant="secondary">
+              지금 활용하기 →
+            </AppButton>
+          </RouterLink>
+        </template>
+      </AppCard>
+
       <AppCard
         eyebrow="식재료"
         :title="`${inventoryCount}개 보유`"
@@ -220,6 +267,9 @@ onMounted(load);
 }
 .kcal { margin-left: var(--space-sm); color: var(--color-muted); }
 .muted { color: var(--color-muted); margin: 0; }
+.expiring { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-xs); }
+.expiring li { display: flex; align-items: center; gap: var(--space-sm); }
+.expiring__name { color: var(--color-body-strong); font-size: var(--fs-body-sm); }
 
 .card-eyebrow {
   font-size: var(--fs-caption);

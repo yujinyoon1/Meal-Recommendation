@@ -1,0 +1,253 @@
+openapi: 3.0.3
+info:
+  title: 적응형 식단 추천 고도화 API (002)
+  version: 0.2.0
+  description: |
+    Feature `002-adaptive-meal-recommendation` 의 신규/확장 REST API 계약.
+    spec.md FR-001~040 중 본 단계 신규/확장 분만 기술하며, 001 계약(openapi 0.1.0)을 계승·확장한다.
+    공개 경로는 `/api` 프리픽스(Nginx → vite → backend) 하에 노출된다.
+servers:
+  - url: http://localhost:9534/api
+    description: 로컬 개발(backend dev)
+  - url: https://p14.sumzip.com/api
+    description: 공개 도메인
+
+tags:
+  - name: Inventory   # 유통기한/임박 (확장)
+  - name: Preferences # 선호 가중치 (신규)
+  - name: Feedback    # 추천 수정 이력 (확장)
+  - name: MealPlans   # 식단 저장/재사용 (신규)
+  - name: Health      # 건강 기록/리포트 (신규)
+  - name: Recommendation # 근거 표시 (확장)
+  - name: Shopping    # 우선순위 (확장)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+    ExpiringItem:
+      type: object
+      properties:
+        id: { type: integer }
+        raw_text: { type: string }
+        food_group: { type: string }
+        expires_at: { type: string, format: date }
+        days_left: { type: integer }
+        state: { type: string, enum: [imminent, expired] }
+    PreferenceWeight:
+      type: object
+      properties:
+        dimension: { type: string, enum: [category, ingredient, cuisine, spiciness] }
+        key_ref: { type: string }
+        weight: { type: number }
+        confidence: { type: number }
+        sample_count: { type: integer }
+    RecommendationEdit:
+      type: object
+      required: [action, target_type, target_ref]
+      properties:
+        action: { type: string, enum: [replace, exclude, substitute] }
+        target_type: { type: string, enum: [recipe, ingredient, menu] }
+        target_ref: { type: string }
+        replacement_ref: { type: string, nullable: true }
+    SavedMealPlan:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        memo: { type: string, nullable: true }
+        reuse_count: { type: integer }
+        source_recommendation_id: { type: integer, nullable: true }
+    HealthLog:
+      type: object
+      properties:
+        logged_at: { type: string, format: date }
+        weight_kg: { type: number, nullable: true }
+        metrics: { type: object, additionalProperties: true, nullable: true }
+        note: { type: string, nullable: true }
+    HealthReport:
+      type: object
+      properties:
+        period_type: { type: string, enum: [week, month] }
+        period_start: { type: string, format: date }
+        weight_trend: { type: array, items: { type: object } }
+        nutrition_balance: { type: object, additionalProperties: true }
+        deficiencies: { type: array, items: { type: string } }
+        disclaimer: { type: string, description: "의학적 진단/처방이 아님 (FR-034)" }
+
+security:
+  - bearerAuth: []
+
+paths:
+  /inventory/expiring:
+    get:
+      tags: [Inventory]
+      summary: 임박/만료 식재료 조회 (FR-011, 인앱 알림 소스)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imminent: { type: array, items: { $ref: '#/components/schemas/ExpiringItem' } }
+                  expired:  { type: array, items: { $ref: '#/components/schemas/ExpiringItem' } }
+
+  /inventory/items/{id}/expiry:
+    patch:
+      tags: [Inventory]
+      summary: 식재료 유통기한/식품군 수정 (FR-010)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expires_at: { type: string, format: date, nullable: true }
+                food_group: { type: string }
+      responses:
+        '200': { description: Updated }
+        '404': { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /preferences/weights:
+    get:
+      tags: [Preferences]
+      summary: 현재 선호 가중치 조회 (FR-003 근거 표시용)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cold_start: { type: boolean, description: "데이터 임계 미만이면 true (FR-004)" }
+                  weights: { type: array, items: { $ref: '#/components/schemas/PreferenceWeight' } }
+
+  /recommendations/{id}/edits:
+    post:
+      tags: [Feedback]
+      summary: 추천 수정 이력 기록 (FR-002) — 학습 신호
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: '#/components/schemas/RecommendationEdit' }
+      responses:
+        '201': { description: Recorded }
+
+  /meal-plans:
+    get:
+      tags: [MealPlans]
+      summary: 저장 식단 목록 (FR-020)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SavedMealPlan' }
+    post:
+      tags: [MealPlans]
+      summary: 추천 식단 저장 (FR-020)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_recommendation_id, name]
+              properties:
+                source_recommendation_id: { type: integer }
+                name: { type: string }
+                memo: { type: string, nullable: true }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SavedMealPlan' }
+
+  /meal-plans/{id}/reuse:
+    post:
+      tags: [MealPlans]
+      summary: 저장 식단 기반 재추천 (FR-021) — reuse_count 증가
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: 재추천 결과(추천 응답과 동일 형태, rationale 포함)
+
+  /health/logs:
+    get:
+      tags: [Health]
+      summary: 건강 기록 조회 (FR-030)
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/HealthLog' } }
+    post:
+      tags: [Health]
+      summary: 건강 기록 입력/갱신 (수동, 일자별 UPSERT) (FR-030)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/HealthLog' }
+      responses:
+        '201': { description: Saved }
+
+  /health/report:
+    get:
+      tags: [Health]
+      summary: 건강/영양 분석 리포트 (FR-031, FR-032, FR-034)
+      parameters:
+        - { name: period, in: query, schema: { type: string, enum: [week, month], default: week } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthReport' }
+        '409':
+          description: 데이터 부족 — 누적 안내 (EC-5)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /history/calendar:
+    get:
+      tags: [Health]
+      summary: 식단 이력 캘린더 조회 (FR-033)
+      parameters:
+        - { name: month, in: query, schema: { type: string, example: "2026-06" } }
+      responses:
+        '200':
+          description: 일자별 식단 이력 맵
+
+# 확장(기존 엔드포인트 동작 변경, 스키마 추가만):
+# - POST /recommendations  → 응답에 rationale[] 추가 (FR-003), 선호 가중치·임박 부스트 결정적 반영 (FR-001/012),
+#                            AllergyValidator 최종 게이트 유지 (FR-005)
+# - GET  /shopping/list    → 항목에 priority_score/reason 포함, 우선순위 정렬 (FR-035/036)

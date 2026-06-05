@@ -4,8 +4,8 @@ import * as ctrl from './controller.js';
 
 const router = Router();
 router.use(authRequired);
-router.post('/recommendations/:id/feedback', ctrl.postFeedback);
-router.get('/recommendations/:id/feedbacks', ctrl.getFeedbacks);
-router.post('/recommendations/:id/edits', ctrl.postEdits); // 002 FR-002
+
+// GET /api/preferences/weights — 학습된 선호 가중치 조회 (FR-003)
+router.get('/preferences/weights', ctrl.getPreferenceWeights);
 
 export default router;

@@ -15,6 +15,7 @@ import recommendationRouter from './modules/recommendation/routes.js';
 import feedbackRouter from './modules/feedback/routes.js';
 import historyRouter from './modules/history/routes.js';
 import bookmarksRouter from './modules/bookmarks/routes.js';
+import preferencesRouter from './modules/preferences/routes.js';
 import shoppingRouter from './modules/shopping/routes.js';
 import exportRouter from './modules/privacy/exportService.js';
 import withdrawRouter from './modules/privacy/withdrawService.js';
@@ -47,6 +48,7 @@ export function createApp(): Express {
   app.use('/api', feedbackRouter);
   app.use('/api', historyRouter);
   app.use('/api', bookmarksRouter);
+  app.use('/api', preferencesRouter);
   app.use('/api', shoppingRouter);
   app.use('/api', exportRouter);
   app.use('/api', withdrawRouter);

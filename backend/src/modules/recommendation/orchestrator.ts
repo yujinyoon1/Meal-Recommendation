@@ -25,10 +25,13 @@ import {
 import { detectAllergyViolations, type AliasMap } from '../../domain/validator/allergy.js';
 import { calculateNutrition, type NutritionInput } from '../../domain/nutrition/calculator.js';
 import { aggregateHints } from '../../domain/prompt/preferenceHints.js';
+import { splitPreferences } from '../../domain/preferences/weightCalculator.js';
+import { getWeights } from '../preferences/service.js';
 import { getCurrent as getBasic } from '../users/basicProfile.service.js';
 import { getCurrent as getHealth } from '../users/healthProfile.service.js';
 import { getCurrent as getDiet } from '../users/dietPreference.service.js';
-import { list as listInventory } from '../inventory/service.js';
+import { list as listInventory, loadThresholds } from '../inventory/service.js';
+import { evaluateExpiry } from '../../domain/expiry/expiryEvaluator.js';
 import { cacheKey, lookup as cacheLookup, store as cacheStore } from './cache.js';
 
 const DISCLAIMER =
@@ -59,7 +62,14 @@ export interface RecommendationResult {
     confidence: 'high' | 'medium' | 'low';
   } | null;
   warnings: string[];
+  rationale: RationaleItem[];
   disclaimer: string;
+}
+
+/** 002 FR-003 — 추천 근거(왜 이 추천인지). */
+export interface RationaleItem {
+  type: 'preference' | 'imminent' | 'cold_start';
+  message: string;
 }
 
 interface AliasRow extends RowDataPacket {
@@ -151,11 +161,55 @@ export async function generate(
     if (cached) return cached;
   }
 
-  // 2) prompt — 최근 30일 부정 피드백 힌트 주입 (FR-019)
+  // 2) prompt — 최근 30일 부정 피드백 힌트 + 학습된 선호 가중치(FR-001/019)
   const hints = await aggregateHints(userId);
+  const prefSnapshot = await getWeights(userId);
+  const { prefer: preferIng, avoid: avoidIng } = splitPreferences(
+    prefSnapshot.weights,
+    'ingredient',
+  );
+  // 학습된 기피 재료를 부정 힌트에 결정적으로 병합(중복 제거).
+  const mergedDislike = Array.from(new Set([...hints.dislike_ingredients, ...avoidIng]));
   const prompt = buildRecommendationPrompt(promptProfile, promptInventory, {
-    preferenceHints: hints,
+    preferenceHints: { ...hints, dislike_ingredients: mergedDislike },
   });
+  // 학습된 선호 재료를 시스템 힌트로 추가(가중치 적용 — 단, 안전 검증은 이후 최종 게이트).
+  if (preferIng.length > 0) {
+    prompt.messages.push({
+      role: 'system',
+      content: `사용자가 선호하는 재료(가능하면 우선 활용): ${preferIng.join(', ')}`,
+    });
+  }
+
+  // 002 FR-003 — 추천 근거 수집
+  const rationale: RationaleItem[] = [];
+  if (prefSnapshot.cold_start) {
+    rationale.push({ type: 'cold_start', message: '아직 학습 데이터가 적어 기본 프로필 기준으로 추천했습니다.' });
+  } else {
+    if (preferIng.length) rationale.push({ type: 'preference', message: `선호 재료 우선 반영: ${preferIng.slice(0, 5).join(', ')}` });
+    if (avoidIng.length) rationale.push({ type: 'preference', message: `기피 재료 회피: ${avoidIng.slice(0, 5).join(', ')}` });
+  }
+  // 임박 재료(식품군별 차등 임계) 우선 활용 근거 (FR-012). 만료 재료는 추천 입력에서 제외(FR-014).
+  const thresholds = await loadThresholds();
+  const { imminent } = evaluateExpiry(
+    inventory.map((it) => ({
+      id: it.id,
+      name: it.normalized ?? it.raw_text,
+      food_group: it.food_group,
+      days_left: it.expires_at
+        ? Math.ceil((new Date(it.expires_at).getTime() - Date.now()) / (24 * 3600 * 1000))
+        : null,
+    })),
+    thresholds,
+  );
+  if (imminent.length) {
+    // 임박 재료를 우선 소비하도록 시스템 힌트로 결정적 주입
+    prompt.messages.push({
+      role: 'system',
+      content: `유통기한이 임박한 재료를 우선 활용하세요: ${imminent.map((i) => i.name).join(', ')}`,
+    });
+    rationale.push({ type: 'imminent', message: `유통기한 임박 재료 우선: ${imminent.map((i) => i.name).slice(0, 5).join(', ')}` });
+  }
 
   // 3) LLM 호출 + 4) 알레르기 검증 (재시도 1회)
   const aliasMap = await loadAliasMap();
@@ -278,6 +332,7 @@ export async function generate(
       confidence: nutrition.confidence,
     } : null,
     warnings,
+    rationale,
     disclaimer: DISCLAIMER,
   };
 }
@@ -460,6 +515,7 @@ export async function loadResult(recommendationId: number): Promise<Recommendati
       confidence: n.confidence,
     } : null,
     warnings: [],
+    rationale: [],
     disclaimer: DISCLAIMER,
   };
 }
