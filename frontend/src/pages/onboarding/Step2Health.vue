@@ -50,25 +50,11 @@ function removeDisease(v: string) {
 
     <div class="chip-row">
       <span class="label-uppercase">ALLERGIES</span>
-      <div class="chips">
-        <AppBadge
-          v-for="a in modelValue.allergies"
-          :key="a"
-          tone="red"
-          variant="solid"
-        >
-          {{ a }} <button
-            class="chip-x"
-            @click="removeAllergy(a)"
-          >
-            ×
-          </button>
-        </AppBadge>
-      </div>
       <div class="row">
         <AppInput
           v-model="allergyInput"
           placeholder="예: 땅콩"
+          @keyup.enter="addAllergy"
         />
         <AppButton
           variant="outline"
@@ -77,29 +63,46 @@ function removeDisease(v: string) {
           ADD
         </AppButton>
       </div>
+      <ul
+        v-if="modelValue.allergies.length"
+        class="item-list"
+      >
+        <li
+          v-for="a in modelValue.allergies"
+          :key="a"
+          class="item"
+        >
+          <AppBadge
+            tone="red"
+            variant="solid"
+          >
+            {{ a }}
+          </AppBadge>
+          <button
+            class="item-x"
+            type="button"
+            :aria-label="`${a} 삭제`"
+            @click="removeAllergy(a)"
+          >
+            ×
+          </button>
+        </li>
+      </ul>
+      <p
+        v-else
+        class="empty-hint"
+      >
+        추가한 알레르기가 여기에 표시됩니다.
+      </p>
     </div>
 
     <div class="chip-row">
       <span class="label-uppercase">DISEASES</span>
-      <div class="chips">
-        <AppBadge
-          v-for="d in modelValue.diseases"
-          :key="d"
-          tone="warn"
-          variant="outline"
-        >
-          {{ d }} <button
-            class="chip-x"
-            @click="removeDisease(d)"
-          >
-            ×
-          </button>
-        </AppBadge>
-      </div>
       <div class="row">
         <AppInput
           v-model="diseaseInput"
           placeholder="예: 고혈압"
+          @keyup.enter="addDisease"
         />
         <AppButton
           variant="outline"
@@ -108,6 +111,37 @@ function removeDisease(v: string) {
           ADD
         </AppButton>
       </div>
+      <ul
+        v-if="modelValue.diseases.length"
+        class="item-list"
+      >
+        <li
+          v-for="d in modelValue.diseases"
+          :key="d"
+          class="item"
+        >
+          <AppBadge
+            tone="warn"
+            variant="outline"
+          >
+            {{ d }}
+          </AppBadge>
+          <button
+            class="item-x"
+            type="button"
+            :aria-label="`${d} 삭제`"
+            @click="removeDisease(d)"
+          >
+            ×
+          </button>
+        </li>
+      </ul>
+      <p
+        v-else
+        class="empty-hint"
+      >
+        추가한 질병이 여기에 표시됩니다.
+      </p>
     </div>
 
     <div class="grid">
@@ -138,12 +172,43 @@ function removeDisease(v: string) {
 <style scoped>
 .step { display: flex; flex-direction: column; gap: var(--space-md); }
 .eyebrow { color: var(--color-muted); }
-.chip-row { display: flex; flex-direction: column; gap: var(--space-xs); }
-.chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); min-height: 24px; }
-.chip-x {
-  background: none; border: none; color: inherit; cursor: pointer; padding: 0 0 0 4px; font-size: 14px;
-}
+.chip-row { display: flex; flex-direction: column; gap: var(--space-sm); }
 .row { display: flex; gap: var(--space-xs); align-items: end; }
+
+/* 입력칸 아래 추가된 항목 목록 */
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 8px 12px;
+  background: var(--color-canvas-soft);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+}
+.item-x {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.item-x:hover { color: var(--color-ink); }
+.empty-hint {
+  margin: 0;
+  font-size: var(--fs-body-sm);
+  color: var(--color-muted);
+}
 .row > :first-child { flex: 1; }
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
 .field { display: flex; flex-direction: column; gap: var(--space-xs); }

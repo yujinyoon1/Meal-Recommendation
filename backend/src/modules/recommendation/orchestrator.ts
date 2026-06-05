@@ -35,6 +35,7 @@ const DISCLAIMER =
   '본 추천은 정보 제공 목적이며 의학적 진단/처방이 아닙니다. 알레르기·기저질환이 있으면 전문의와 상담하세요.';
 
 export interface RecipeOut {
+  id?: number; // DB 저장 후/조회 시 채워짐. LLM 파싱 단계에서는 없음.
   name: string;
   description?: string;
   ingredients: Array<{ name: string; quantity: number; unit: string; substitute?: string }>;
@@ -93,14 +94,24 @@ async function callLlm(messages: ReturnType<typeof buildRecommendationPrompt>['m
   return llm.complete(messages, { timeoutMs: env.LLM_TIMEOUT_MS, jsonMode: true });
 }
 
-export async function generate(userId: number): Promise<RecommendationResult> {
+export async function generate(
+  userId: number,
+  opts: { itemIds?: number[] } = {},
+): Promise<RecommendationResult> {
   // 1) 스냅샷 로드
-  const [basic, health, diet, inventory] = await Promise.all([
+  const [basic, health, diet, allInventory] = await Promise.all([
     getBasic(userId),
     getHealth(userId),
     getDiet(userId),
     listInventory(userId, { onlyActive: true }),
   ]);
+
+  // 선택한 재료(itemIds)가 있으면 그것만 사용 — 체크한 재료로 레시피 만들기.
+  let inventory = allInventory;
+  if (opts.itemIds && opts.itemIds.length > 0) {
+    const sel = new Set(opts.itemIds);
+    inventory = allInventory.filter((it) => sel.has(it.id));
+  }
 
   if (inventory.length === 0) {
     throw new AppError('EMPTY_INVENTORY', '식재료를 먼저 입력해 주세요.', 400);
@@ -287,7 +298,7 @@ async function persistRequest(userId: number, p: PersistInput): Promise<number> 
     `INSERT INTO recommendation_requests
        (user_id, profile_snapshot_json, inventory_snapshot_json, prompt_version,
         llm_provider, llm_model, llm_latency_ms, status, failure_reason)
-     VALUES (?, CAST(? AS JSON), CAST(? AS JSON), ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       JSON.stringify(p.profileSnapshot),
@@ -320,7 +331,7 @@ async function persistArtifacts(
     for (const r of recipes) {
       const [recipe] = await conn.query<ResultSetHeader>(
         `INSERT INTO recipes (name, description, ingredients_json, steps_json, est_cooking_min, difficulty)
-         VALUES (?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           r.name,
           r.description ?? null,
@@ -334,12 +345,13 @@ async function persistArtifacts(
         'INSERT INTO meal_plan_recipes (meal_plan_id, recipe_id, serving_count) VALUES (?, ?, ?)',
         [plan.insertId, recipe.insertId, 1.0],
       );
+      r.id = recipe.insertId; // 생성 직후 응답에도 recipe id 를 실어 보내 북마크 가능하게.
     }
 
     await conn.query(
       `INSERT INTO nutrition_analyses
          (recommendation_id, total_kcal, carb_g, protein_g, fat_g, fiber_g, sodium_mg, rda_ratio_json, confidence)
-       VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         recommendationId,
         nutrition.total_kcal,
@@ -367,6 +379,7 @@ interface RecRow extends RowDataPacket {
   status: 'pending' | 'generated' | 'validated' | 'rejected' | 'failed';
 }
 interface RecipeRow extends RowDataPacket {
+  id: number;
   name: string;
   description: string | null;
   ingredients_json: RecipeOut['ingredients'];
@@ -385,6 +398,23 @@ interface NutritionRow extends RowDataPacket {
   confidence: 'high' | 'medium' | 'low';
 }
 
+/**
+ * MariaDB JSON 컬럼(LONGTEXT)은 mysql2가 문자열로 반환할 수 있다.
+ * 문자열이면 파싱하고, 이미 객체/배열이면 그대로 반환한다.
+ * (이걸 안 하면 프론트에서 steps 문자열을 v-for로 순회해 "한 글자씩" 표시됨)
+ */
+function parseJsonColumn<T>(v: unknown, fallback: T): T {
+  if (v == null) return fallback;
+  if (typeof v === 'string') {
+    try {
+      return JSON.parse(v) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return v as T;
+}
+
 export async function loadResult(recommendationId: number): Promise<RecommendationResult | null> {
   const [recRows] = await pool.query<RecRow[]>(
     'SELECT id, status FROM recommendation_requests WHERE id = ? LIMIT 1',
@@ -394,7 +424,7 @@ export async function loadResult(recommendationId: number): Promise<Recommendati
   if (!rec) return null;
 
   const [recipeRows] = await pool.query<RecipeRow[]>(
-    `SELECT r.name, r.description, r.ingredients_json, r.steps_json, r.est_cooking_min, r.difficulty
+    `SELECT r.id, r.name, r.description, r.ingredients_json, r.steps_json, r.est_cooking_min, r.difficulty
        FROM meal_plans mp
        JOIN meal_plan_recipes mpr ON mpr.meal_plan_id = mp.id
        JOIN recipes r ON r.id = mpr.recipe_id
@@ -411,10 +441,11 @@ export async function loadResult(recommendationId: number): Promise<Recommendati
     recommendation_id: rec.id,
     status: rec.status === 'pending' || rec.status === 'generated' ? 'validated' : rec.status,
     recipes: recipeRows.map((r) => ({
+      id: r.id,
       name: r.name,
       description: r.description ?? undefined,
-      ingredients: r.ingredients_json ?? [],
-      steps: r.steps_json ?? [],
+      ingredients: parseJsonColumn(r.ingredients_json, [] as RecipeOut['ingredients']),
+      steps: parseJsonColumn(r.steps_json, [] as string[]),
       est_cooking_min: r.est_cooking_min ?? 0,
       difficulty: r.difficulty,
     })),
@@ -425,7 +456,7 @@ export async function loadResult(recommendationId: number): Promise<Recommendati
       fat_g: Number(n.fat_g),
       fiber_g: Number(n.fiber_g),
       sodium_mg: Number(n.sodium_mg),
-      rda_ratio: n.rda_ratio_json,
+      rda_ratio: parseJsonColumn(n.rda_ratio_json, {} as Record<string, number>),
       confidence: n.confidence,
     } : null,
     warnings: [],

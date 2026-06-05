@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import ProfileTab from './ProfileTab.vue';
 import ConsentsTab from './ConsentsTab.vue';
 import DataExportTab from './DataExportTab.vue';
 import WithdrawTab from './WithdrawTab.vue';
 
-type Tab = 'consents' | 'export' | 'withdraw';
-const active = ref<Tab>('consents');
+type Tab = 'profile' | 'consents' | 'export' | 'withdraw';
+const active = ref<Tab>('profile');
 
 const TABS: Array<{ key: Tab; label: string }> = [
+  { key: 'profile', label: 'PROFILE' },
   { key: 'consents', label: 'CONSENTS' },
   { key: 'export', label: 'MY DATA' },
   { key: 'withdraw', label: 'WITHDRAW' },
@@ -43,7 +45,8 @@ const TABS: Array<{ key: Tab; label: string }> = [
       class="panel"
       role="tabpanel"
     >
-      <ConsentsTab v-if="active === 'consents'" />
+      <ProfileTab v-if="active === 'profile'" />
+      <ConsentsTab v-else-if="active === 'consents'" />
       <DataExportTab v-else-if="active === 'export'" />
       <WithdrawTab v-else-if="active === 'withdraw'" />
     </div>

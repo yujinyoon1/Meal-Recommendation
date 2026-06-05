@@ -96,7 +96,7 @@ onMounted(load);
               ★ {{ f.rating }}
             </AppBadge>
             <span class="comment">{{ f.comment || '(코멘트 없음)' }}</span>
-            <span class="when">{{ new Date(f.created_at).toLocaleString('ko-KR') }}</span>
+            <span class="when">{{ new Date(f.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) }}</span>
           </li>
         </ul>
       </section>

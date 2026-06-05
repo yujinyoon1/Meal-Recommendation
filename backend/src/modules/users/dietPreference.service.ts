@@ -19,9 +19,24 @@ interface Row extends RowDataPacket {
   meals_per_day: number | null;
   dining_out_per_week: number | null;
   delivery_per_week: number | null;
-  avoid_ingredients_json: string[] | null;
-  prefer_categories_json: string[] | null;
+  // MariaDB JSON 컬럼은 LONGTEXT라 mysql2가 문자열로 반환할 수 있음.
+  avoid_ingredients_json: string | string[] | null;
+  prefer_categories_json: string | string[] | null;
   cooking_time_max_min: number;
+}
+
+/** JSON 컬럼이 배열로 파싱돼 오든 문자열로 오든 안전하게 string[]로 변환. */
+function asStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string');
+  if (typeof v === 'string' && v.trim()) {
+    try {
+      const parsed = JSON.parse(v);
+      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 export async function getCurrent(userId: number) {
@@ -40,8 +55,8 @@ export async function getCurrent(userId: number) {
     meals_per_day: r.meals_per_day,
     dining_out_per_week: r.dining_out_per_week,
     delivery_per_week: r.delivery_per_week,
-    avoid_ingredients: r.avoid_ingredients_json ?? [],
-    prefer_categories: r.prefer_categories_json ?? [],
+    avoid_ingredients: asStringArray(r.avoid_ingredients_json),
+    prefer_categories: asStringArray(r.prefer_categories_json),
     cooking_time_max_min: r.cooking_time_max_min,
   };
 }
@@ -52,10 +67,12 @@ export async function upsert(userId: number, dto: DietPreferenceDto) {
     await conn.beginTransaction();
     await conn.query('UPDATE diet_preferences SET valid_to = NOW() WHERE user_id = ? AND valid_to IS NULL', [userId]);
     await conn.query<ResultSetHeader>(
+      // MariaDB의 JSON 컬럼은 LONGTEXT 별칭 — CAST(? AS JSON)은 구문 오류.
+      // JSON 문자열을 그대로 바인딩하면 json_valid 체크를 통과해 저장된다.
       `INSERT INTO diet_preferences
         (user_id, meals_per_day, dining_out_per_week, delivery_per_week,
          avoid_ingredients_json, prefer_categories_json, cooking_time_max_min)
-       VALUES (?, ?, ?, ?, CAST(? AS JSON), CAST(? AS JSON), ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         dto.meals_per_day ?? null,

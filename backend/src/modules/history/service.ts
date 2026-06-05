@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { RowDataPacket } from 'mysql2';
 import { pool } from '../../db/pool.js';
+import { AppError } from '../../middleware/errorHandler.js';
 import { loadResult } from '../recommendation/orchestrator.js';
 
 export const ListQuery = z.object({
@@ -15,6 +16,7 @@ interface HistRow extends RowDataPacket {
   status: 'pending' | 'generated' | 'validated' | 'rejected' | 'failed';
   total_kcal: string | null;
   rating: number | null;
+  recipe_names: string | null;
 }
 
 function encodeCursor(requestAt: Date, id: number): string {
@@ -44,7 +46,12 @@ export async function list(userId: number, dto: ListQueryDto) {
   const [rows] = await pool.query<HistRow[]>(
     `SELECT rr.id, rr.request_at, rr.status,
             na.total_kcal,
-            (SELECT MAX(rating) FROM feedbacks fb WHERE fb.recommendation_id = rr.id) AS rating
+            (SELECT MAX(rating) FROM feedbacks fb WHERE fb.recommendation_id = rr.id) AS rating,
+            (SELECT GROUP_CONCAT(rc.name ORDER BY rc.id SEPARATOR ', ')
+               FROM meal_plans mp
+               JOIN meal_plan_recipes mpr ON mpr.meal_plan_id = mp.id
+               JOIN recipes rc ON rc.id = mpr.recipe_id
+              WHERE mp.recommendation_id = rr.id) AS recipe_names
        FROM recommendation_requests rr
        LEFT JOIN nutrition_analyses na ON na.recommendation_id = rr.id
       WHERE ${where.join(' AND ')}
@@ -65,6 +72,7 @@ export async function list(userId: number, dto: ListQueryDto) {
       status: r.status,
       total_kcal: r.total_kcal == null ? null : Number(r.total_kcal),
       rating: r.rating,
+      recipe_names: r.recipe_names,
     })),
     next_cursor: nextCursor,
   };
@@ -89,4 +97,52 @@ export async function detailWithFeedback(userId: number, recommendationId: numbe
     [recommendationId],
   );
   return { ...result, feedbacks: fb };
+}
+
+interface IdRow extends RowDataPacket { id: number }
+interface RecipeIdRow extends RowDataPacket { recipe_id: number }
+
+/** 추천 이력 1건과 연관 데이터(레시피·식단·영양·피드백·캐시)를 삭제. 소유자만. */
+export async function remove(userId: number, recommendationId: number): Promise<void> {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [owners] = await conn.query<OwnerRow[]>(
+      'SELECT user_id FROM recommendation_requests WHERE id = ? LIMIT 1',
+      [recommendationId],
+    );
+    if (owners.length === 0) throw new AppError('NOT_FOUND', 'recommendation not found', 404);
+    if (owners[0].user_id !== userId) throw new AppError('FORBIDDEN', 'not your recommendation', 403);
+
+    const [mps] = await conn.query<IdRow[]>(
+      'SELECT id FROM meal_plans WHERE recommendation_id = ?',
+      [recommendationId],
+    );
+    const mpIds = mps.map((r) => r.id);
+    if (mpIds.length > 0) {
+      const [recipeRows] = await conn.query<RecipeIdRow[]>(
+        'SELECT recipe_id FROM meal_plan_recipes WHERE meal_plan_id IN (?)',
+        [mpIds],
+      );
+      const recipeIds = recipeRows.map((r) => r.recipe_id);
+      await conn.query('DELETE FROM meal_plan_recipes WHERE meal_plan_id IN (?)', [mpIds]);
+      if (recipeIds.length > 0) {
+        await conn.query('DELETE FROM recipes WHERE id IN (?)', [recipeIds]);
+      }
+      await conn.query('DELETE FROM meal_plans WHERE recommendation_id = ?', [recommendationId]);
+    }
+
+    await conn.query('DELETE FROM nutrition_analyses WHERE recommendation_id = ?', [recommendationId]);
+    await conn.query('DELETE FROM feedbacks WHERE recommendation_id = ?', [recommendationId]);
+    await conn.query('DELETE FROM recommendation_cache WHERE recommendation_id = ?', [recommendationId]);
+    await conn.query('DELETE FROM recommendation_requests WHERE id = ? AND user_id = ?', [recommendationId, userId]);
+
+    await conn.commit();
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
 }

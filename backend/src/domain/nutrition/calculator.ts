@@ -46,26 +46,54 @@ const DEFAULT_RDA = {
   sodium_mg: 2000,
 };
 
-// 단순 환산표 → grams
+// 무게·부피·고정 단위 → grams
 const UNIT_TO_GRAM: Record<string, number> = {
   g: 1,
   kg: 1000,
   ml: 1,
   l: 1000,
   L: 1000,
-  '개': 60, // 평균치 (계란 ≈ 60g 등)
-  tbsp: 15,
-  tsp: 5,
+  tbsp: 15, // 큰술
+  tsp: 5, // 작은술
+  '큰술': 15,
+  '작은술': 5,
   '컵': 240,
   cup: 240,
+  '모': 300, // 두부 한 모 ≈ 300g
+  '공기': 210, // 밥 한 공기 ≈ 210g
+  '대': 70, // 대파 1대 ≈ 70g
+  '쪽': 5, // 마늘 1쪽 ≈ 5g
+  '단': 100,
+  '봉': 100,
+  '팩': 200,
 };
 
-function toGrams(qty: number | null, unit: string | null): number | null {
+// '개' 등 낱개 단위는 재료마다 무게가 크게 달라 재료별 평균 중량을 적용한다.
+const PIECE_UNITS = new Set(['개', '알', '쪽수']);
+const PIECE_WEIGHTS_G: Record<string, number> = {
+  계란: 60,
+  달걀: 60,
+  양파: 200,
+  토마토: 150,
+  애호박: 280,
+  브로콜리: 250,
+  감자: 150,
+  당근: 150,
+  오이: 200,
+  파프리카: 120,
+  가지: 150,
+};
+const PIECE_DEFAULT_G = 100; // 미등록 재료 낱개 기본값
+
+function toGrams(qty: number | null, unit: string | null, name = ''): number | null {
   if (qty == null || qty <= 0) return null;
   const u = (unit ?? 'g').trim();
-  const factor = UNIT_TO_GRAM[u];
-  if (factor == null) return qty; // 알 수 없으면 그대로 통과
-  return qty * factor;
+  if (u in UNIT_TO_GRAM) return qty * UNIT_TO_GRAM[u];
+  if (PIECE_UNITS.has(u)) {
+    const w = PIECE_WEIGHTS_G[name.trim()] ?? PIECE_DEFAULT_G;
+    return qty * w;
+  }
+  return qty; // 알 수 없는 단위는 g로 가정
 }
 
 export function calculateNutrition(
@@ -77,7 +105,7 @@ export function calculateNutrition(
   let totalConsidered = 0;
 
   for (const ing of ingredients) {
-    const grams = toGrams(ing.quantity, ing.unit);
+    const grams = toGrams(ing.quantity, ing.unit, ing.name);
     if (grams == null) continue;
     totalConsidered += 1;
 

@@ -16,6 +16,7 @@ export interface AuthResult {
   user: AuthUser;
   accessToken: string;
   refreshToken: string;
+  remember: boolean;
 }
 
 interface UserRow extends RowDataPacket {
@@ -89,7 +90,12 @@ export async function login(input: LoginInput): Promise<AuthResult> {
   if (!ok) {
     throw new AppError('INVALID_CREDENTIALS', 'Invalid email or password', 401);
   }
-  return issueTokens({ id: u.id, email: u.email, displayName: u.display_name });
+  // 로그인 시각 갱신: 직전 로그인(previous)을 보존하고 이번 로그인(last)을 NOW로.
+  await pool.query(
+    'UPDATE users SET previous_login_at = last_login_at, last_login_at = NOW() WHERE id = ?',
+    [u.id],
+  );
+  return issueTokens({ id: u.id, email: u.email, displayName: u.display_name }, input.rememberMe);
 }
 
 export async function refresh(refreshToken: string): Promise<AuthResult> {
@@ -110,7 +116,8 @@ export async function refresh(refreshToken: string): Promise<AuthResult> {
   if (!u || u.status !== 'active' || u.deleted_at) {
     throw new AppError('INVALID_REFRESH', 'User no longer active', 401);
   }
-  return issueTokens({ id: u.id, email: u.email, displayName: u.display_name });
+  // 자동 로그인 선호를 refresh 토큰에서 이어받아 쿠키 영속성 유지.
+  return issueTokens({ id: u.id, email: u.email, displayName: u.display_name }, payload.remember ?? true);
 }
 
 export async function logout(_userId: number): Promise<void> {
@@ -118,8 +125,8 @@ export async function logout(_userId: number): Promise<void> {
   return;
 }
 
-function issueTokens(user: AuthUser): AuthResult {
+function issueTokens(user: AuthUser, remember = true): AuthResult {
   const accessToken = signAccessToken(user.id);
-  const refreshToken = signRefreshToken(user.id, randomUUID());
-  return { user, accessToken, refreshToken };
+  const refreshToken = signRefreshToken(user.id, randomUUID(), remember);
+  return { user, accessToken, refreshToken, remember };
 }

@@ -36,10 +36,13 @@ api.interceptors.response.use(
   (resp) => resp,
   async (error: AxiosError) => {
     const original = error.config as RetryConfig | undefined;
+    // 인증 엔드포인트(refresh/login/logout)의 401은 재시도 금지 — 무한 refresh 루프 방지.
+    const isAuthCall = !!original?.url && /\/auth\/(refresh|login|logout)/.test(original.url);
     if (
       error.response?.status === 401 &&
       original &&
       !original._retried &&
+      !isAuthCall &&
       onUnauthorized
     ) {
       original._retried = true;

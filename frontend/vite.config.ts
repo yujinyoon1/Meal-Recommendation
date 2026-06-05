@@ -26,8 +26,11 @@ export default defineConfig({
     allowedHosts: ['p14.sumzip.com', 'localhost'],
   },
   preview: {
+    host: '0.0.0.0',
     port: 9514,
     strictPort: true,
+    // p14.sumzip.com(Nginx 프록시) 로 들어오는 호스트 허용
+    allowedHosts: ['p14.sumzip.com', 'localhost'],
   },
   test: {
     environment: 'jsdom',

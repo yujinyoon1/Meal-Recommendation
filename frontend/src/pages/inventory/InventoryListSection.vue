@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { api } from '@/api/client';
 import AppCard from '@/components/ui/AppCard.vue';
 import AppBadge from '@/components/ui/AppBadge.vue';
@@ -18,10 +18,30 @@ interface Item {
   warning?: string;
 }
 
-const props = defineProps<{ items: Item[] }>();
-const emit = defineEmits<{ (e: 'changed'): void }>();
+const props = defineProps<{ items: Item[]; recommending?: boolean }>();
+const emit = defineEmits<{
+  (e: 'changed'): void;
+  (e: 'recommend', ids: number[]): void;
+}>();
 
 const sorted = computed(() => props.items.slice());
+
+const selected = ref<Set<number>>(new Set());
+const selectedCount = computed(() => selected.value.size);
+
+function toggle(id: number) {
+  const next = new Set(selected.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selected.value = next;
+}
+function clearSelection() {
+  selected.value = new Set();
+}
+function recommendSelected() {
+  if (selected.value.size === 0) return;
+  emit('recommend', [...selected.value]);
+}
 
 async function markConsumed(id: number) {
   await api.patch(`/inventory/items/${id}`, { consumed: true });
@@ -38,6 +58,26 @@ async function removeItem(id: number) {
     <header class="list__head">
       <span class="label-uppercase">CURRENT ITEMS</span>
       <span class="list__count">{{ items.length }}</span>
+      <div class="spacer" />
+      <span
+        v-if="selectedCount"
+        class="list__selinfo"
+      >{{ selectedCount }}개 선택됨</span>
+      <AppButton
+        v-if="selectedCount"
+        variant="ghost"
+        @click="clearSelection"
+      >
+        선택 해제
+      </AppButton>
+      <AppButton
+        v-if="selectedCount"
+        variant="primary"
+        :disabled="recommending"
+        @click="recommendSelected"
+      >
+        {{ recommending ? '추천 중…' : `선택한 ${selectedCount}개로 레시피 →` }}
+      </AppButton>
     </header>
 
     <p
@@ -58,6 +98,13 @@ async function removeItem(id: number) {
         padding="md"
       >
         <header class="card-head">
+          <label class="card-head__check">
+            <input
+              type="checkbox"
+              :checked="selected.has(it.id)"
+              @change="toggle(it.id)"
+            >
+          </label>
           <strong class="card-head__name">{{ it.normalized ?? it.raw_text }}</strong>
           <span
             v-if="it.quantity"
@@ -107,8 +154,12 @@ async function removeItem(id: number) {
 
 <style scoped>
 .list { display: flex; flex-direction: column; gap: var(--space-md); }
-.list__head { display: flex; align-items: baseline; gap: var(--space-sm); border-top: 1px solid var(--color-hairline); padding-top: var(--space-md); }
+.list__head { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; border-top: 1px solid var(--color-hairline); padding-top: var(--space-md); }
 .list__count { color: var(--color-muted); font-size: var(--fs-caption); }
+.list__head .spacer { flex: 1; }
+.list__selinfo { color: var(--color-ink-deep); font-weight: var(--fw-semibold); font-size: var(--fs-body-sm); }
+.card-head__check { display: inline-flex; align-items: center; }
+.card-head__check input { width: 17px; height: 17px; accent-color: var(--color-primary); cursor: pointer; }
 .list__empty { color: var(--color-muted); font-style: italic; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-md); }
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-xs); }

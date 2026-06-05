@@ -5,6 +5,7 @@ import { applySecurity } from './middleware/security.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import healthRouter from './routes/health.js';
 import authRouter from './modules/auth/routes.js';
+import accountProfileRouter from './modules/users/accountProfile.service.js';
 import basicProfileRouter from './modules/users/basicProfile.service.js';
 import healthProfileRouter from './modules/users/healthProfile.service.js';
 import dietPreferenceRouter from './modules/users/dietPreference.service.js';
@@ -13,6 +14,7 @@ import inventoryRouter from './modules/inventory/routes.js';
 import recommendationRouter from './modules/recommendation/routes.js';
 import feedbackRouter from './modules/feedback/routes.js';
 import historyRouter from './modules/history/routes.js';
+import bookmarksRouter from './modules/bookmarks/routes.js';
 import shoppingRouter from './modules/shopping/routes.js';
 import exportRouter from './modules/privacy/exportService.js';
 import withdrawRouter from './modules/privacy/withdrawService.js';
@@ -35,6 +37,7 @@ export function createApp(): Express {
   // routes
   app.use('/health', healthRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api', accountProfileRouter);
   app.use('/api', basicProfileRouter);
   app.use('/api', healthProfileRouter);
   app.use('/api', dietPreferenceRouter);
@@ -43,6 +46,7 @@ export function createApp(): Express {
   app.use('/api', recommendationRouter);
   app.use('/api', feedbackRouter);
   app.use('/api', historyRouter);
+  app.use('/api', bookmarksRouter);
   app.use('/api', shoppingRouter);
   app.use('/api', exportRouter);
   app.use('/api', withdrawRouter);

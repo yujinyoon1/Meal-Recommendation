@@ -48,7 +48,7 @@ const SYSTEM = `당신은 한국 1인 가구의 식단을 추천하는 영양/�
       "name": string,
       "description": string,
       "ingredients": [{ "name": string, "quantity": number, "unit": string, "substitute"?: string }],
-      "steps": string[],
+      "steps": string[],   // 각 원소 = 조리 한 단계의 완결된 설명 문장 (글자 단위 분해 금지)
       "est_cooking_min": number,
       "difficulty": "easy" | "medium" | "hard"
     }
@@ -61,7 +61,8 @@ const SYSTEM = `당신은 한국 1인 가구의 식단을 추천하는 영양/�
 3. 1인분 분량으로 작성한다.
 4. 조리 시간은 사용자가 지정한 cooking_time_max_min 이하로 한다.
 5. 의학적 진단/처방을 제공하지 않는다. 정보 제공 목적임을 유지한다.
-6. "[유통기한 임박 — 우선 사용]"으로 표시된 재료는 ingredients 배열의 상단(첫 1~2번째)에 반드시 포함시킨다 (priority: high).`;
+6. "[유통기한 임박 — 우선 사용]"으로 표시된 재료는 ingredients 배열의 상단(첫 1~2번째)에 반드시 포함시킨다 (priority: high).
+7. steps는 조리 순서대로 4~6단계로 작성한다. 각 단계는 한 문장 이상으로 친절하고 자세하게 — 재료 손질법, 불 세기, 시간, 상태(예: "노릇해질 때까지") 같은 팁을 포함한다. 단계를 한두 단어나 글자 단위로 끊지 말고 초보자도 따라 할 수 있게 설명한다.`;
 
 function profileBlock(p: PromptProfile): string {
   const lines: string[] = [];

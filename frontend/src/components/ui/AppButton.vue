@@ -1,11 +1,16 @@
 <script setup lang="ts">
 /**
- * AppButton — BMW M 시그니처 CTA.
- * 기본: 사각(0px), 1px 흰 아웃라인, UPPERCASE 14/700, 1.5px 트래킹, height 48.
- * variant: primary (filled canvas) | outline (transparent border) | ghost (no border) | icon (48 round)
+ * AppButton — Wise CTA 시그니처.
+ * 기본: 24px pill, 48px 높이, semibold 16/24, sentence case.
+ * variant:
+ *  - primary  : lime green 채움 (#9fe870) + ink 텍스트. 페이지당 1개 권장.
+ *  - secondary: sage canvas 채움 + ink 텍스트.
+ *  - outline  : white 채움 + ink 1px 보더.
+ *  - ghost    : 보더 없음, 텍스트 전용.
+ *  - icon     : 44px 원형 white + ink 아이콘.
  */
 defineProps<{
-  variant?: 'primary' | 'outline' | 'ghost' | 'icon';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'icon';
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
   block?: boolean;
@@ -33,65 +38,85 @@ defineEmits<{ (e: 'click', ev: MouseEvent): void }>();
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   height: 48px;
-  padding: 0 32px;
-  border: 1px solid var(--color-ink);
-  border-radius: var(--radius-none);
-  background: var(--color-canvas);
-  color: var(--color-ink);
-  font: inherit;
+  padding: 0 var(--space-xl);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xl);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-family: var(--font-sans);
   font-size: var(--fs-button);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-label);
-  text-transform: uppercase;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease,
+    transform 120ms ease;
 }
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0); }
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.btn--block {
-  width: 100%;
+.btn--block { width: 100%; }
+
+/* primary — Wise lime green */
+.btn--primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn--primary:hover:not(:disabled) { background: var(--color-primary-active); }
+
+/* secondary — sage canvas */
+.btn--secondary {
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+}
+.btn--secondary:hover:not(:disabled) {
+  background: var(--color-surface-elevated);
 }
 
-/* primary — canvas fill + white outline */
-.btn--primary:hover:not(:disabled) {
-  background: var(--color-ink);
-  color: var(--color-canvas);
-}
-
-/* outline — transparent fill, useful over photography */
+/* outline — white pill with ink border */
 .btn--outline {
-  background: transparent;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  border-color: var(--color-ink);
 }
 .btn--outline:hover:not(:disabled) {
   background: var(--color-ink);
   color: var(--color-canvas);
 }
 
-/* ghost — no border, text-only inline */
+/* ghost — text-only inline */
 .btn--ghost {
-  border-color: transparent;
   background: transparent;
-  padding: 0 var(--space-md);
+  color: var(--color-ink);
   height: auto;
+  padding: var(--space-sm) var(--space-md);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 .btn--ghost:hover:not(:disabled) {
-  color: var(--color-body-strong);
+  background: transparent;
+  color: var(--color-ink-deep);
+  transform: none;
 }
 
-/* icon — circular 48 */
+/* icon — circular 44 */
 .btn--icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   padding: 0;
-  border: none;
   border-radius: var(--radius-full);
-  background: var(--color-surface-card);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
 }
 .btn--icon:hover:not(:disabled) {
-  background: var(--color-surface-elevated);
+  background: var(--color-canvas-soft);
 }
 </style>

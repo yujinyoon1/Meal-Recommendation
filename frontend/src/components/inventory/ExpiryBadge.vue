@@ -31,8 +31,8 @@ const variant = computed<'solid' | 'outline'>(() => {
 
 const label = computed<string>(() => {
   if (day.value == null) return '';
-  if (day.value < 0) return `EXPIRED +${Math.abs(day.value)}D`;
-  if (day.value === 0) return 'D-DAY';
+  if (day.value < 0) return `만료 +${Math.abs(day.value)}일`;
+  if (day.value === 0) return 'D-day';
   return `D-${day.value}`;
 });
 </script>

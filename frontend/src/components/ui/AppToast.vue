@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * AppToast — 우측 하단 알림 카드(고정).
- * tone: info (default) | success | warn | error
- * 사용: <AppToast :open="show" tone="error" @close="show=false">메시지</AppToast>
+ * AppToast — 우측 하단 알림 카드.
+ *  - Wise card chrome: white 배경, radius-xl, 미세 그림자.
+ *  - 톤은 좌측 4px 컬러 인디케이터로 표현.
  */
 defineProps<{
   open: boolean;
@@ -20,11 +20,11 @@ defineEmits<{ (e: 'close'): void }>();
       :class="`toast--${tone ?? 'info'}`"
       role="status"
     >
-      <div class="m-stripe toast__stripe" />
+      <div class="toast__indicator" />
       <div class="toast__body">
         <strong
           v-if="title"
-          class="toast__title label-uppercase"
+          class="toast__title"
         >{{ title }}</strong>
         <p class="toast__msg">
           <slot />
@@ -49,27 +49,32 @@ defineEmits<{ (e: 'close'): void }>();
   z-index: 1000;
   min-width: 280px;
   max-width: 420px;
-  background: var(--color-surface-card);
+  background: var(--color-canvas);
   color: var(--color-ink);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-none);
+  border: none;
+  border-radius: var(--radius-xl);
   display: grid;
-  grid-template-columns: 1fr auto;
-  padding: var(--space-md) var(--space-md) var(--space-md) var(--space-lg);
+  grid-template-columns: 4px 1fr auto;
+  padding: var(--space-md) var(--space-lg) var(--space-md) 0;
   gap: var(--space-md);
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
-.toast__stripe {
-  position: absolute;
-  inset: 0 0 auto 0;
+.toast__indicator {
+  grid-column: 1;
+  align-self: stretch;
+  background: var(--color-primary);
 }
 .toast__body {
-  grid-column: 1;
+  grid-column: 2;
+  padding-left: var(--space-md);
 }
 .toast__title {
   display: block;
-  margin-bottom: 4px;
-  color: var(--color-body-strong);
+  margin-bottom: 2px;
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-ink);
 }
 .toast__msg {
   margin: 0;
@@ -78,7 +83,7 @@ defineEmits<{ (e: 'close'): void }>();
   line-height: 1.5;
 }
 .toast__close {
-  grid-column: 2;
+  grid-column: 3;
   align-self: start;
   background: none;
   border: none;
@@ -86,14 +91,15 @@ defineEmits<{ (e: 'close'): void }>();
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
+  padding: 0;
 }
 .toast__close:hover { color: var(--color-ink); }
 
-/* tone — 좌측 보더 색상으로 톤 구분 (스트라이프는 항상 M 트라이컬러) */
-.toast--success { border-left: 4px solid var(--color-success); }
-.toast--warn    { border-left: 4px solid var(--color-warning); }
-.toast--error   { border-left: 4px solid var(--color-m-red); }
-.toast--info    { border-left: 4px solid var(--color-bmw-blue); }
+/* tone indicator */
+.toast--success .toast__indicator { background: var(--color-positive); }
+.toast--warn    .toast__indicator { background: var(--color-warning); }
+.toast--error   .toast__indicator { background: var(--color-negative); }
+.toast--info    .toast__indicator { background: var(--color-primary); }
 
 .toast-enter-from, .toast-leave-to {
   opacity: 0;

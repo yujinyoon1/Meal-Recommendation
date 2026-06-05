@@ -9,6 +9,7 @@ export interface RefreshPayload extends JwtPayload {
   sub: string;
   type: 'refresh';
   jti: string; // refresh token id (revocation)
+  remember?: boolean; // 자동 로그인(영속 쿠키) 여부
 }
 
 export function signAccessToken(userId: string | number): string {
@@ -16,10 +17,10 @@ export function signAccessToken(userId: string | number): string {
   return jwt.sign({ sub: String(userId), type: 'access' }, env.JWT_ACCESS_SECRET, opts);
 }
 
-export function signRefreshToken(userId: string | number, jti: string): string {
+export function signRefreshToken(userId: string | number, jti: string, remember = true): string {
   const opts: SignOptions = { expiresIn: env.JWT_REFRESH_TTL as SignOptions['expiresIn'] };
   return jwt.sign(
-    { sub: String(userId), type: 'refresh', jti },
+    { sub: String(userId), type: 'refresh', jti, remember },
     env.JWT_REFRESH_SECRET,
     opts,
   );

@@ -3,9 +3,14 @@ import { z } from 'zod';
 import { AppError } from '../../middleware/errorHandler.js';
 import * as orchestrator from './orchestrator.js';
 
+const RecommendBody = z.object({
+  item_ids: z.array(z.coerce.number().int().positive()).max(100).optional(),
+});
+
 export async function postRecommend(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await orchestrator.generate(req.user!.id);
+    const { item_ids } = RecommendBody.parse(req.body ?? {});
+    const result = await orchestrator.generate(req.user!.id, { itemIds: item_ids });
     res.status(201).json(result);
   } catch (e) { next(e); }
 }

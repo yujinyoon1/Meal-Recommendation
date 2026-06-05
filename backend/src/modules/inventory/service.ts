@@ -131,7 +131,11 @@ export async function list(userId: number, opts: { onlyActive?: boolean } = {}):
       ORDER BY (expires_at IS NULL), expires_at ASC, id DESC`,
     args,
   );
-  return rows.map((r) => toItem(r));
+  // raw_text에서 날짜·수량을 떼어낸 깔끔한 표시 이름을 derive 한다.
+  return rows.map((r) => {
+    const parsed = normalizeInventoryText(r.raw_text)[0];
+    return toItem(r, parsed?.normalized ?? null);
+  });
 }
 
 export async function patch(userId: number, itemId: number, dto: PatchDto): Promise<InventoryItem> {

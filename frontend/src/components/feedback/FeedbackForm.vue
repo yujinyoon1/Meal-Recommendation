@@ -39,7 +39,7 @@ async function onSubmit() {
 
 <template>
   <AppCard
-    eyebrow="FEEDBACK"
+    eyebrow="피드백"
     title="이 추천은 어땠나요?"
     variant="soft"
     padding="lg"
@@ -77,14 +77,14 @@ async function onSubmit() {
           :disabled="submitting"
           @click="onSubmit"
         >
-          {{ submitting ? 'SENDING…' : 'SUBMIT FEEDBACK' }}
+          {{ submitting ? '전송 중…' : '피드백 보내기' }}
         </AppButton>
       </div>
     </template>
     <AppToast
       :open="ok"
       tone="success"
-      title="THANKS"
+      title="감사합니다"
       @close="ok = false"
     >
       피드백이 저장되었습니다. 다음 추천에 반영됩니다.
@@ -92,7 +92,7 @@ async function onSubmit() {
     <AppToast
       :open="!!error"
       tone="error"
-      title="ERROR"
+      title="오류"
       @close="error = null"
     >
       {{ error }}
@@ -103,23 +103,46 @@ async function onSubmit() {
 <style scoped>
 .stars { display: flex; align-items: center; gap: var(--space-xs); }
 .star {
-  background: none; border: 1px solid var(--color-hairline);
-  color: var(--color-muted); padding: 4px 10px; font-size: 18px;
-  cursor: pointer; transition: color 80ms ease, border-color 80ms ease;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-muted);
+  padding: 6px 12px;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  transition: color 80ms ease, border-color 80ms ease, background-color 80ms ease;
 }
-.star.on { color: var(--color-warning); border-color: var(--color-warning); }
-.stars__label { margin-left: var(--space-xs); color: var(--color-muted); font-size: var(--fs-caption); letter-spacing: var(--ls-label); text-transform: uppercase; }
+.star:hover { border-color: var(--color-ink); }
+.star.on {
+  color: var(--color-warning-deep);
+  border-color: var(--color-warning);
+  background: #fff5d6;
+}
+.stars__label {
+  margin-left: var(--space-sm);
+  color: var(--color-muted);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+}
 .comment {
   width: 100%;
   background: var(--color-canvas);
   color: var(--color-ink);
-  border: 1px solid var(--color-hairline);
-  padding: var(--space-sm);
-  font: inherit; font-size: var(--fs-body-sm);
-  border-radius: var(--radius-none);
+  border: 1px solid var(--color-ink);
+  padding: var(--space-md) var(--space-lg);
+  font: inherit;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  border-radius: var(--radius-md);
   resize: vertical;
-  min-height: 80px;
+  min-height: 96px;
+  transition: box-shadow 120ms ease;
 }
-.comment:focus { outline: none; border-color: var(--color-ink); }
+.comment::placeholder { color: var(--color-muted); }
+.comment:focus {
+  outline: none;
+  border-color: var(--color-ink-deep);
+  box-shadow: 0 0 0 3px var(--color-primary-pale);
+}
 .actions { display: flex; justify-content: flex-end; }
 </style>

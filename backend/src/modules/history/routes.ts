@@ -9,5 +9,7 @@ router.use(authRequired);
 // GET /api/recommendations/:id/full  — 피드백 포함 상세 (기본 :id 는 recommendation 라우터 사용)
 router.get('/recommendations', ctrl.getList);
 router.get('/recommendations/:id/full', ctrl.getDetail);
+// DELETE /api/recommendations/:id — 이력 선택 삭제 (recommendation 라우터엔 DELETE 없음)
+router.delete('/recommendations/:id', ctrl.deleteOne);
 
 export default router;

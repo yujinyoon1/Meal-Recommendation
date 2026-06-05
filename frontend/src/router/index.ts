@@ -6,7 +6,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    redirect: '/dashboard',
+    component: () => import('@/pages/landing/LandingPage.vue'),
+    meta: { public: true },
+    // 이미 로그인한 사용자는 소개 페이지 대신 대시보드로.
+    beforeEnter: () => {
+      const auth = useAuthStore();
+      return auth.isAuthenticated ? { name: 'dashboard' } : true;
+    },
   },
   {
     path: '/login',
@@ -24,6 +30,7 @@ const routes: RouteRecordRaw[] = [
     path: '/dashboard',
     name: 'dashboard',
     component: () => import('@/pages/dashboard/DashboardPage.vue'),
+    meta: { public: true },
   },
   {
     path: '/onboarding',
@@ -51,6 +58,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/history/HistoryDetailPage.vue'),
   },
   {
+    path: '/bookmarks',
+    name: 'bookmarks',
+    component: () => import('@/pages/bookmarks/BookmarksPage.vue'),
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/pages/settings/SettingsPage.vue'),
@@ -66,8 +78,10 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore();
+  // 새로고침/직접 접속 시 refresh 쿠키로 세션 복원이 끝날 때까지 기다린 뒤 판정.
+  await auth.ensureRestored();
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } };
   }

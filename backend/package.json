@@ -12,6 +12,7 @@
     "migrate:status": "tsx src/db/migrate.ts status",
     "seed:masters": "tsx src/db/seeds/seed-masters.ts",
     "seed:foods": "tsx src/db/seeds/seed-foods.ts",
+    "seed:demo": "tsx src/db/seeds/seed-demo-user.ts",
     "cron:hard-delete": "tsx src/modules/privacy/hardDeleteJob.ts",
     "gen:types": "tsx scripts/gen-types-from-openapi.ts",
     "test": "vitest run",

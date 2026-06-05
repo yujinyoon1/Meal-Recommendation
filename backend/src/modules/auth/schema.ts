@@ -15,6 +15,7 @@ export const RegisterRequest = z.object({
 export const LoginRequest = z.object({
   email: z.string().email().max(255),
   password: z.string().min(1).max(72),
+  rememberMe: z.boolean().optional().default(true),
 });
 
 export const ConsentSet = z.array(ConsentInput);

@@ -20,10 +20,15 @@
 
 ## 디자인 시스템
 
-- `frontend/DESIGN.md` (BMW M-inspired, getdesign 산출물) 를 UI 작성 전 참조.
-- 토큰은 `frontend/src/styles/tokens.css` (다크 캔버스 #000, M 트라이컬러는 브랜드 시그니처에만, 기본 radius 0, UPPERCASE 트래킹 라벨).
-- 5종 기초 컴포넌트: `frontend/src/components/ui/` (AppButton, AppInput, AppCard, AppBadge, AppToast).
-- 데이터 시각화 가이드(Python 기반 참고용): `frontend/.agents/skills/data-visualization/SKILL.md` — 실제 차트는 Chart.js로 구현.
+- `frontend/DESIGN.md` (Wise-inspired, `npx getdesign add wise` 산출물) 를 UI 작성 전 참조.
+- 토큰은 `frontend/src/styles/tokens.css` —
+  - **캔버스**: sage `#e8ebe6` (페이지), white `#ffffff` (카드 인테리어).
+  - **시그니처 액센트**: lime green `#9fe870` (CTA 전용, 두 번째 액센트 금지).
+  - **헤드라인**: Manrope 900 (Wise Sans 대체) + Inter 600 서브헤드/UI. 본문은 sentence case.
+  - **둥근 모서리**: 카드/버튼 `--radius-xl` 24px가 캐논. sharp 사각 금지.
+  - 레거시 BMW M 토큰명(`--color-m-red`, `--color-bmw-blue`, `.m-stripe`, `.label-uppercase`)은 Wise 팔레트로 alias 처리되어 점진적 교체 진행 중.
+- 5종 기초 컴포넌트: `frontend/src/components/ui/` (AppButton, AppInput, AppCard, AppBadge, AppToast) + EmptyState.
+- 데이터 시각화 가이드(Python 기반 참고용): `frontend/.agents/skills/data-visualization/SKILL.md` — 실제 차트는 Chart.js로 구현 (Wise 팔레트: lime/accent-cyan/accent-orange).
 
 ## 기술 스택 (확정)
 

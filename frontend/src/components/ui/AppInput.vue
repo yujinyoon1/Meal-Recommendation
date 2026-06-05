@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * AppInput — text-input on dark surface.
- * 48px / 0px radius / surface-card 배경 / hairline 보더.
- * 라벨은 항상 UPPERCASE 트래킹.
+ * AppInput — Wise text-input.
+ *  - white 배경, ink 텍스트, 1px ink 보더, radius 12, padding 12/16, height 48.
+ *  - 라벨은 sentence case + semibold 14.
+ *  - error 시 negative 톤 보더 + 메시지.
  */
 import { computed } from 'vue';
 
@@ -14,6 +15,7 @@ const props = defineProps<{
   error?: string;
   hint?: string;
   required?: boolean;
+  disabled?: boolean;
   autocomplete?: string;
   name?: string;
 }>();
@@ -33,7 +35,7 @@ const value = computed({
   >
     <span
       v-if="label"
-      class="field__label label-uppercase"
+      class="field__label"
     >
       {{ label }}<span
         v-if="required"
@@ -45,6 +47,7 @@ const value = computed({
       :type="type ?? 'text'"
       :placeholder="placeholder"
       :required="required"
+      :disabled="disabled"
       :name="name"
       :autocomplete="autocomplete"
       class="field__input"
@@ -68,44 +71,57 @@ const value = computed({
   width: 100%;
 }
 .field__label {
-  color: var(--color-body-strong);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  color: var(--color-ink);
+  letter-spacing: 0;
+  text-transform: none;
 }
 .field__req {
-  color: var(--color-m-red);
+  color: var(--color-negative);
   margin-left: 4px;
 }
 .field__input {
   height: 48px;
   padding: 12px 16px;
-  background: var(--color-surface-card);
+  background: var(--color-canvas);
   color: var(--color-ink);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-none);
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-md);
   font: inherit;
   font-size: var(--fs-body);
-  font-weight: var(--fw-body);
+  font-weight: var(--fw-regular);
   line-height: 1.5;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 .field__input::placeholder {
   color: var(--color-muted);
 }
+.field__input:disabled {
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
+  border-color: var(--color-hairline);
+  cursor: not-allowed;
+}
 .field__input:focus {
   outline: none;
-  border-color: var(--color-ink);
-  background: var(--color-surface-elevated);
+  border-color: var(--color-ink-deep);
+  box-shadow: 0 0 0 3px var(--color-primary-pale);
 }
 .field__hint {
   font-size: var(--fs-caption);
-  letter-spacing: var(--ls-caption);
   color: var(--color-muted);
 }
 .field__error {
   font-size: var(--fs-caption);
-  letter-spacing: var(--ls-caption);
-  color: var(--color-m-red);
+  font-weight: var(--fw-semibold);
+  color: var(--color-negative-darkest);
 }
 .field--error .field__input {
-  border-color: var(--color-m-red);
+  border-color: var(--color-negative);
+}
+.field--error .field__input:focus {
+  box-shadow: 0 0 0 3px rgba(208, 50, 56, 0.18);
 }
 </style>

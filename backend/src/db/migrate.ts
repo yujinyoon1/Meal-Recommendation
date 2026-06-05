@@ -25,11 +25,16 @@ async function ensureMetaTable() {
 }
 
 function splitStatements(sql: string): string[] {
-  // 단순 세미콜론 분리 — 마이그레이션 SQL에는 트리거/PROCEDURE 미사용 전제
-  return sql
-    .split(/;\s*\r?\n/)
+  // 줄 단위로 `-- 주석` 라인을 제거한 뒤 세미콜론으로 분리.
+  // (트리거/PROCEDURE 미사용 전제 — 본 마이그레이션에는 해당 없음)
+  const stripped = sql
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*--/.test(line))
+    .join('\n');
+  return stripped
+    .split(/;\s*(?:\r?\n|$)/)
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !/^--/.test(s));
+    .filter((s) => s.length > 0);
 }
 
 async function loadMigrations() {

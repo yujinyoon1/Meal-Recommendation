@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import AppButton from '@/components/ui/AppButton.vue';
@@ -10,15 +10,29 @@ const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
+const REMEMBER_KEY = 'p14_remember_email';
+
 const form = reactive({ email: '', password: '' });
+const rememberMe = ref(true);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+onMounted(() => {
+  // 자동 로그인으로 기억해 둔 이메일이 있으면 미리 채운다.
+  const saved = localStorage.getItem(REMEMBER_KEY);
+  if (saved) {
+    form.email = saved;
+    rememberMe.value = true;
+  }
+});
 
 async function onSubmit() {
   loading.value = true;
   error.value = null;
   try {
-    await auth.login(form.email, form.password);
+    await auth.login(form.email, form.password, rememberMe.value);
+    if (rememberMe.value) localStorage.setItem(REMEMBER_KEY, form.email);
+    else localStorage.removeItem(REMEMBER_KEY);
     const redirect = (route.query.redirect as string) || '/dashboard';
     router.replace(redirect);
   } catch (e: unknown) {
@@ -57,6 +71,14 @@ async function onSubmit() {
         autocomplete="current-password"
         required
       />
+      <label class="remember">
+        <input
+          v-model="rememberMe"
+          type="checkbox"
+          class="remember__box"
+        >
+        <span>자동 로그인</span>
+      </label>
       <AppButton
         type="submit"
         variant="primary"
@@ -71,6 +93,9 @@ async function onSubmit() {
         <router-link to="/register">
           SIGN UP
         </router-link>
+      </p>
+      <p class="auth-form__demo">
+        체험용 계정 — id: demo@p14.sumzip.com / pw: Demo1234!
       </p>
     </form>
 
@@ -90,6 +115,28 @@ async function onSubmit() {
 .auth-page__title { font-size: var(--fs-display-lg); margin: var(--space-lg) 0 var(--space-xs); }
 .auth-page__sub { color: var(--color-body); margin-bottom: var(--space-xl); }
 .auth-form { display: flex; flex-direction: column; gap: var(--space-md); }
+.auth-form__demo {
+  margin: calc(-1 * var(--space-xs)) 0 0;
+  text-align: center;
+  font-size: var(--fs-caption);
+  color: var(--color-muted);
+  letter-spacing: 0.01em;
+}
+.remember {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--fs-body-sm);
+  color: var(--color-body);
+  cursor: pointer;
+  user-select: none;
+}
+.remember__box {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
 .auth-form__alt { font-size: var(--fs-body-sm); color: var(--color-muted); text-align: center; margin: 0; }
 .auth-form__alt a { text-transform: uppercase; letter-spacing: var(--ls-label); font-weight: var(--fw-bold); font-size: var(--fs-caption); }
 </style>

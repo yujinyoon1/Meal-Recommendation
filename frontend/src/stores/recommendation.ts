@@ -8,6 +8,7 @@ export interface RecipeIngredient {
   substitute?: string;
 }
 export interface Recipe {
+  id?: number; // 추천 생성/조회 시 채워짐. 북마크 토글 대상.
   name: string;
   description?: string;
   ingredients: RecipeIngredient[];
@@ -44,11 +45,12 @@ export const useRecommendationStore = defineStore('recommendation', {
   state: (): State => ({ current: null, loading: false, error: null }),
 
   actions: {
-    async request() {
+    async request(opts: { itemIds?: number[] } = {}) {
       this.loading = true;
       this.error = null;
       try {
-        const { data } = await api.post<RecommendationResult>('/recommendations');
+        const body = opts.itemIds && opts.itemIds.length ? { item_ids: opts.itemIds } : {};
+        const { data } = await api.post<RecommendationResult>('/recommendations', body);
         this.current = data;
         return data;
       } catch (e: unknown) {

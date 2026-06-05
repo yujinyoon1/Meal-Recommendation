@@ -1,6 +1,7 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../../db/pool.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { lookupFood } from '../../adapters/nutrition/foodLookup.js';
 import { computeGap, type NutritionSnapshot, type ShoppingCandidate } from './gapCalculator.js';
 
 interface OwnerRow extends RowDataPacket { user_id: number }
@@ -32,6 +33,87 @@ export interface ShoppingListResponse {
     reason: string;
     suggested_qty: string;
   }>;
+  // 레시피에 필요하지만 현재 재고에 없는 재료 (매 호출 시 현재 재고 기준으로 새로 계산, 저장하지 않음).
+  missing_ingredients: Array<{ name: string; suggested_qty: string }>;
+}
+
+interface RecipeIngredient { name?: string; quantity?: number | string | null; unit?: string | null }
+interface IngredientsRow extends RowDataPacket { ingredients_json: RecipeIngredient[] | string | null }
+interface InvRow extends RowDataPacket { food_id: number | null; raw_text: string | null; name_ko: string | null }
+
+// 사오지 않는 기본 재료(수돗물 등)는 누락 목록에서 제외.
+const IGNORE_INGREDIENTS = new Set(['물']);
+// 동의어 정규화 — 같은 재료의 다른 표기를 통일. (예: 달걀=계란)
+const SYNONYMS: Array<[RegExp, string]> = [[/달걀/g, '계란']];
+function applySynonyms(s: string): string {
+  let x = s;
+  for (const [re, to] of SYNONYMS) x = x.replace(re, to);
+  return x;
+}
+const norm = (s: string) => applySynonyms(s.replace(/\s+/g, '').toLowerCase());
+
+/**
+ * 추천의 레시피 재료 중 현재 재고(consumed=0)에 없는 것을 계산.
+ * 매칭 우선순위: (1) 재료명을 food_id 로 해석해 재고 food_id 와 대조,
+ *               (2) 실패 시 재고 이름(정규명/원문)과 부분일치 대조.
+ */
+async function computeMissingIngredients(
+  userId: number,
+  recommendationId: number,
+): Promise<ShoppingListResponse['missing_ingredients']> {
+  const [recipeRows] = await pool.query<IngredientsRow[]>(
+    `SELECT rc.ingredients_json
+       FROM meal_plans mp
+       JOIN meal_plan_recipes mpr ON mpr.meal_plan_id = mp.id
+       JOIN recipes rc ON rc.id = mpr.recipe_id
+      WHERE mp.recommendation_id = ?`,
+    [recommendationId],
+  );
+  const ingredients: RecipeIngredient[] = [];
+  for (const r of recipeRows) {
+    const raw = r.ingredients_json;
+    const arr = typeof raw === 'string' ? (JSON.parse(raw) as RecipeIngredient[]) : raw;
+    if (Array.isArray(arr)) ingredients.push(...arr);
+  }
+  if (ingredients.length === 0) return [];
+
+  const [invRows] = await pool.query<InvRow[]>(
+    `SELECT ii.food_id, ii.raw_text, f.name_ko
+       FROM ingredient_items ii
+       LEFT JOIN foods f ON f.id = ii.food_id
+      WHERE ii.user_id = ? AND ii.consumed = 0`,
+    [userId],
+  );
+  const ownedFoodIds = new Set<number>();
+  const ownedNames: string[] = [];
+  for (const r of invRows) {
+    if (r.food_id != null) ownedFoodIds.add(Number(r.food_id));
+    if (r.name_ko) ownedNames.push(norm(r.name_ko));
+    if (r.raw_text) ownedNames.push(norm(r.raw_text));
+  }
+  const ownedNorm = ownedNames.filter(Boolean);
+
+  const out: ShoppingListResponse['missing_ingredients'] = [];
+  const seen = new Set<string>();
+  for (const ing of ingredients) {
+    const name = (ing.name ?? '').trim();
+    const key = norm(name);
+    if (!name || IGNORE_INGREDIENTS.has(name) || !key || seen.has(key)) continue;
+    seen.add(key);
+
+    let owned = false;
+    const match = await lookupFood(applySynonyms(name)); // 달걀→계란 등 동의어 통일 후 food_id 해석
+    if (match.food_id != null && ownedFoodIds.has(match.food_id)) owned = true;
+    if (!owned) owned = ownedNorm.some((o) => o.includes(key) || key.includes(o));
+    if (owned) continue;
+
+    const qty = [ing.quantity, ing.unit]
+      .filter((v) => v != null && v !== '')
+      .join(' ')
+      .trim();
+    out.push({ name, suggested_qty: qty });
+  }
+  return out;
 }
 
 export async function listOrGenerate(userId: number, recommendationId: number): Promise<ShoppingListResponse> {
@@ -42,6 +124,9 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
   );
   if (owners.length === 0) throw new AppError('NOT_FOUND', 'recommendation not found', 404);
   if (owners[0].user_id !== userId) throw new AppError('FORBIDDEN', 'not your recommendation', 403);
+
+  // 레시피 재료 중 현재 재고에 없는 것 — 영양 부족분과 별개로 매번 새로 계산.
+  const missing_ingredients = await computeMissingIngredients(userId, recommendationId);
 
   // 기존 항목
   const [existing] = await pool.query<ItemRow[]>(
@@ -61,6 +146,7 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
         reason: r.reason ?? '',
         suggested_qty: r.suggested_qty ?? '',
       })),
+      missing_ingredients,
     };
   }
 
@@ -71,7 +157,7 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
   );
   const nut = nutRows[0];
   if (!nut || !nut.rda_ratio_json) {
-    return { recommendation_id: recommendationId, generated: false, warnings: ['nutrition analysis missing'], items: [] };
+    return { recommendation_id: recommendationId, generated: false, warnings: ['nutrition analysis missing'], items: [], missing_ingredients };
   }
 
   const snapshot: NutritionSnapshot = {
@@ -90,7 +176,7 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
   const candidates: ShoppingCandidate[] = await computeGap(snapshot);
 
   if (candidates.length === 0) {
-    return { recommendation_id: recommendationId, generated: true, warnings, items: [] };
+    return { recommendation_id: recommendationId, generated: true, warnings, items: [], missing_ingredients };
   }
 
   // 저장 (트랜잭션)
@@ -122,5 +208,5 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
     conn.release();
   }
 
-  return { recommendation_id: recommendationId, generated: true, warnings, items: inserted };
+  return { recommendation_id: recommendationId, generated: true, warnings, items: inserted, missing_ingredients };
 }
