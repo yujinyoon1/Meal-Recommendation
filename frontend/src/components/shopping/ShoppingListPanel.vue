@@ -12,6 +12,7 @@ interface Item {
   category: string | null;
   reason: string;
   suggested_qty: string;
+  priority_score: number;
 }
 interface MissingIngredient {
   name: string;
@@ -59,8 +60,15 @@ const grouped = computed<Record<string, Item[]>>(() => {
     if (!m[k]) m[k] = [];
     m[k].push(it);
   }
+  // 002 FR-036 — 그룹 내 우선순위 내림차순
+  for (const k of Object.keys(m)) m[k].sort((a, b) => b.priority_score - a.priority_score);
   return m;
 });
+
+// 가장 우선순위 높은 품목(들) — "우선" 배지 표시용 (FR-036)
+const topPriority = computed<number>(() =>
+  (data.value?.items ?? []).reduce((mx, it) => Math.max(mx, it.priority_score), 0),
+);
 
 async function copyAll() {
   if (totalCount.value === 0) return;
@@ -167,7 +175,14 @@ onMounted(load);
               :key="it.id"
               class="item"
             >
-              <span class="item__name">{{ it.name }}</span>
+              <span class="item__name">
+                {{ it.name }}
+                <AppBadge
+                  v-if="it.priority_score === topPriority && topPriority > 0"
+                  tone="success"
+                  variant="solid"
+                >우선</AppBadge>
+              </span>
               <span class="item__qty">{{ it.suggested_qty }}</span>
               <span
                 class="item__reason"

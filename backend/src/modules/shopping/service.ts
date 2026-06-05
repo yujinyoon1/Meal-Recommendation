@@ -3,6 +3,7 @@ import { pool } from '../../db/pool.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { lookupFood } from '../../adapters/nutrition/foodLookup.js';
 import { computeGap, type NutritionSnapshot, type ShoppingCandidate } from './gapCalculator.js';
+import { rankShoppingItems } from '../../domain/shopping/priorityRanker.js';
 
 interface OwnerRow extends RowDataPacket { user_id: number }
 interface NutRow extends RowDataPacket {
@@ -19,6 +20,7 @@ interface ItemRow extends RowDataPacket {
   category: string | null;
   reason: string | null;
   suggested_qty: string | null;
+  priority_score: number;
 }
 
 export interface ShoppingListResponse {
@@ -32,6 +34,7 @@ export interface ShoppingListResponse {
     category: string | null;
     reason: string;
     suggested_qty: string;
+    priority_score: number;
   }>;
   // 레시피에 필요하지만 현재 재고에 없는 재료 (매 호출 시 현재 재고 기준으로 새로 계산, 저장하지 않음).
   missing_ingredients: Array<{ name: string; suggested_qty: string }>;
@@ -130,7 +133,7 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
 
   // 기존 항목
   const [existing] = await pool.query<ItemRow[]>(
-    'SELECT id, food_id, name, category, reason, suggested_qty FROM shopping_list_items WHERE recommendation_id = ? ORDER BY id',
+    'SELECT id, food_id, name, category, reason, suggested_qty, priority_score FROM shopping_list_items WHERE recommendation_id = ? ORDER BY priority_score DESC, id',
     [recommendationId],
   );
   if (existing.length > 0) {
@@ -145,6 +148,7 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
         category: r.category,
         reason: r.reason ?? '',
         suggested_qty: r.suggested_qty ?? '',
+        priority_score: r.priority_score,
       })),
       missing_ingredients,
     };
@@ -179,17 +183,20 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
     return { recommendation_id: recommendationId, generated: true, warnings, items: [], missing_ingredients };
   }
 
+  // 002 FR-035/036 — 영양 부족도 기준 우선순위 산정
+  const ranked = rankShoppingItems(candidates);
+
   // 저장 (트랜잭션)
   const conn = await pool.getConnection();
   const inserted: ShoppingListResponse['items'] = [];
   try {
     await conn.beginTransaction();
-    for (const c of candidates) {
+    for (const c of ranked) {
       const [res] = await conn.query<ResultSetHeader>(
         `INSERT INTO shopping_list_items
-           (recommendation_id, food_id, name, category, reason, suggested_qty)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [recommendationId, c.food_id, c.name, c.category, c.reason, c.suggested_qty],
+           (recommendation_id, food_id, name, category, reason, suggested_qty, priority_score)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [recommendationId, c.food_id, c.name, c.category, c.reason, c.suggested_qty, c.priority_score],
       );
       inserted.push({
         id: res.insertId,
@@ -198,6 +205,7 @@ export async function listOrGenerate(userId: number, recommendationId: number): 
         category: c.category,
         reason: c.reason,
         suggested_qty: c.suggested_qty,
+        priority_score: c.priority_score,
       });
     }
     await conn.commit();

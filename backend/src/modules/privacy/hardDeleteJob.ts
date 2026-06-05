@@ -74,7 +74,20 @@ export async function runHardDelete(now = new Date()): Promise<number> {
           WHERE rr.user_id = ?`,
         [u.id],
       );
+      // 002 — 추천 수정 이력(recommendation_edits.fk_re_user 는 RESTRICT) 은 추천 삭제 전 정리
+      await conn.query(
+        `DELETE re FROM recommendation_edits re
+           JOIN recommendation_requests rr ON rr.id = re.recommendation_id
+          WHERE rr.user_id = ?`,
+        [u.id],
+      );
       await conn.query('DELETE FROM recommendation_requests WHERE user_id = ?', [u.id]);
+      // 002 — 사용자 소유 데이터 (대부분 FK CASCADE 이나 명시적으로 정리)
+      await conn.query('DELETE FROM user_preference_weights WHERE user_id = ?', [u.id]);
+      await conn.query('DELETE FROM consumption_records WHERE user_id = ?', [u.id]);
+      await conn.query('DELETE FROM saved_meal_plans WHERE user_id = ?', [u.id]);
+      await conn.query('DELETE FROM health_logs WHERE user_id = ?', [u.id]);
+      await conn.query('DELETE FROM health_reports WHERE user_id = ?', [u.id]);
       await conn.query('DELETE FROM ingredient_items WHERE user_id = ?', [u.id]);
       await conn.query('DELETE FROM diet_preferences WHERE user_id = ?', [u.id]);
       await conn.query('DELETE FROM health_profiles WHERE user_id = ?', [u.id]);

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useRecommendationStore } from '@/stores/recommendation';
+import { useMealPlansStore } from '@/stores/mealplans';
 import AppButton from '@/components/ui/AppButton.vue';
 import AppBadge from '@/components/ui/AppBadge.vue';
 import AppToast from '@/components/ui/AppToast.vue';
@@ -34,6 +35,26 @@ onMounted(loadOrCheck);
 watch(id, loadOrCheck);
 
 const result = computed(() => store.current);
+
+// 002 FR-020 — 식단 저장
+const mealPlans = useMealPlansStore();
+const saving = ref(false);
+const savedOk = ref(false);
+const saveError = ref<string | null>(null);
+async function saveMealPlan() {
+  if (!result.value) return;
+  saving.value = true;
+  saveError.value = null;
+  try {
+    const name = result.value.recipes[0]?.name ?? '내 식단';
+    await mealPlans.save(result.value.recommendation_id, name);
+    savedOk.value = true;
+  } catch (e: unknown) {
+    saveError.value = (e as { response?: { data?: { message?: string } } }).response?.data?.message ?? '저장 실패';
+  } finally {
+    saving.value = false;
+  }
+}
 </script>
 
 <template>
@@ -114,6 +135,19 @@ const result = computed(() => store.current);
         :nutrition="result.nutrition"
       />
 
+      <div
+        v-if="result.status === 'validated'"
+        class="save-row"
+      >
+        <AppButton
+          variant="secondary"
+          :disabled="saving"
+          @click="saveMealPlan"
+        >
+          {{ saving ? '저장 중…' : '이 식단 저장하기' }}
+        </AppButton>
+      </div>
+
       <ShoppingListPanel
         v-if="result.status === 'validated'"
         :recommendation-id="result.recommendation_id"
@@ -145,6 +179,22 @@ const result = computed(() => store.current);
     </div>
 
     <AppToast
+      :open="savedOk"
+      tone="success"
+      title="저장됨"
+      @close="savedOk = false"
+    >
+      식단이 저장되었습니다. 나중에 재사용할 수 있어요.
+    </AppToast>
+    <AppToast
+      :open="!!saveError"
+      tone="error"
+      title="오류"
+      @close="saveError = null"
+    >
+      {{ saveError }}
+    </AppToast>
+    <AppToast
       :open="!!store.error"
       tone="error"
       title="ERROR"
@@ -175,6 +225,7 @@ const result = computed(() => store.current);
   color: var(--color-ink);
 }
 .rationale ul { margin: 0; padding-left: 1.25rem; color: var(--color-body-strong); }
+.save-row { display: flex; justify-content: flex-end; margin-bottom: var(--space-lg); }
 .warnings {
   border: 1px solid var(--color-m-red);
   padding: var(--space-md);

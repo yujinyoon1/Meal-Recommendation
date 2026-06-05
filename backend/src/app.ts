@@ -16,6 +16,8 @@ import feedbackRouter from './modules/feedback/routes.js';
 import historyRouter from './modules/history/routes.js';
 import bookmarksRouter from './modules/bookmarks/routes.js';
 import preferencesRouter from './modules/preferences/routes.js';
+import mealPlansRouter from './modules/mealplans/routes.js';
+import healthModuleRouter from './modules/health/routes.js';
 import shoppingRouter from './modules/shopping/routes.js';
 import exportRouter from './modules/privacy/exportService.js';
 import withdrawRouter from './modules/privacy/withdrawService.js';
@@ -49,6 +51,8 @@ export function createApp(): Express {
   app.use('/api', historyRouter);
   app.use('/api', bookmarksRouter);
   app.use('/api', preferencesRouter);
+  app.use('/api', mealPlansRouter);
+  app.use('/api', healthModuleRouter);
   app.use('/api', shoppingRouter);
   app.use('/api', exportRouter);
   app.use('/api', withdrawRouter);

@@ -33,8 +33,8 @@
 
 > 002는 신규 외부 의존성·런타임 패키지 없음(plan §1.1). 브랜치 `002-adaptive-meal-recommendation` 기 생성.
 
-- **T001** `[P]` 신규 도메인 디렉터리 골격 생성: `backend/src/domain/{preferences,expiry,health,shopping}/`(빈 index 또는 placeholder). 신규 모듈 디렉터리 `backend/src/modules/{preferences,health,mealplans}/`.
-- **T002** `[P]` 프론트 신규 디렉터리: `frontend/src/pages/health/`, `frontend/src/components/health/`, `frontend/src/stores/health.ts`(stub), `frontend/src/stores/preferences.ts`(stub).
+- **T001** [X] `[P]` 신규 도메인 디렉터리 골격 생성: `backend/src/domain/{preferences,expiry,health,shopping}/`(빈 index 또는 placeholder). 신규 모듈 디렉터리 `backend/src/modules/{preferences,health,mealplans}/`.
+- **T002** [X] `[P]` 프론트 신규 디렉터리: `frontend/src/pages/health/`, `frontend/src/components/health/`, `frontend/src/stores/health.ts`(stub), `frontend/src/stores/preferences.ts`(stub).
 
 ---
 
@@ -108,7 +108,7 @@
 
 ### 프론트
 - **T034** [X] `[P][US2]` `frontend/src/components/inventory/ExpiryBadge.vue` 확장 — 식품군 임계 반영 임박 표시.
-- **T035** `[P][US2]` `frontend/src/pages/inventory/InventoryInputPage.vue`/`InventoryListSection.vue` — 유통기한/식품군 입력·수정 UI.
+- **T035** [X] `[P][US2]` `frontend/src/pages/inventory/InventoryInputPage.vue`/`InventoryListSection.vue` — 유통기한/식품군 입력·수정 UI.
 - **T036** [X] `[P][US2]` `frontend/src/pages/dashboard/DashboardPage.vue` + `frontend/src/stores/inventory.ts` — 임박 알림 배지/목록(폴링 `expiring`). (FR-011)
 
 **Checkpoint US2**: 임박 알림 + 우선 소비 추천 + 소비 기록 적재 동작.
@@ -120,10 +120,10 @@
 **Goal**: 추천 식단을 저장하고 재사용 기반 재추천을 제공하며 재사용 빈도를 학습에 반영한다.
 **Independent Test**: 식단 저장 후 목록 조회, 재사용 시 `reuse_count` 증가 및 재추천 결과 반환(AS-5).
 
-- **T037** `[US3]` `backend/src/modules/mealplans/service.ts` — `save()`, `list()`, `reuse(id)`(reuse_count++ , last_used_at, source 기반 재추천 호출).
-- **T038** `[P][US3]` `backend/src/modules/mealplans/{controller,routes}.ts` — `GET/POST /api/meal-plans`, `POST /api/meal-plans/{id}/reuse` (contracts).
-- **T039** `[US3]` `weightCalculator`/`recomputeWeights` 입력에 재사용 신호 연결(재사용 빈도 → 선호 가중). (FR-021)
-- **T040** `[P][US3]` 프론트 — 추천 결과 "저장" + 저장 식단 목록/재사용 UI(`pages/history` 또는 신규 섹션), `api/client.ts` 추가, `stores/recommendation.ts` 확장.
+- **T037** [X] `[US3]` `backend/src/modules/mealplans/service.ts` — `save()`, `list()`, `reuse(id)`(reuse_count++ , last_used_at, source 기반 재추천 호출).
+- **T038** [X] `[P][US3]` `backend/src/modules/mealplans/{controller,routes}.ts` — `GET/POST /api/meal-plans`, `POST /api/meal-plans/{id}/reuse` (contracts).
+- **T039** [X] `[US3]` `weightCalculator`/`recomputeWeights` 입력에 재사용 신호 연결(재사용 빈도 → 선호 가중). (FR-021)
+- **T040** [X] `[P][US3]` 프론트 — 추천 결과 "저장" + 저장 식단 목록/재사용 UI(`pages/history` 또는 신규 섹션), `api/client.ts` 추가, `stores/recommendation.ts` 확장.
 
 **Checkpoint US3**: 저장·재사용 루프 동작, 재사용이 추천에 반영.
 
@@ -135,14 +135,14 @@
 **Independent Test**: 건강 기록 N건 입력 후 리포트에 체중 추이·주간 영양 균형 표시(AS-6), 기록 희소 시 누적 안내(EC-5), 모든 리포트에 면책 문구(FR-034).
 
 ### 도메인/서비스
-- **T041** `[P][US4]` 테스트 `backend/tests/unit/health/reportAggregator.spec.ts` — 기간 집계·부족/과잉, 데이터 1~2건 희소 처리(EC-5).
-- **T042** `[US4]` `backend/src/domain/health/reportAggregator.ts` — 기간별 평균 영양 균형(기존 nutrition_analyses 활용)·체중 추이·부족 영양소 산출.
-- **T043** `[US4]` `backend/src/modules/health/service.ts` — `upsertLog()`(일자 UNIQUE, `metrics_enc` 암호화 `utils/crypto` 재사용), `getLogs(range)`, `getReport(period)`(409 if 희소). 건강 데이터 동의 확인(FR-038).
-- **T044** `[P][US4]` `backend/src/modules/health/{controller,routes}.ts` — `GET/POST /api/health/logs`, `GET /api/health/report`, `GET /api/history/calendar` (contracts). 모든 리포트 응답에 disclaimer.
+- **T041** [X] `[P][US4]` 테스트 `backend/tests/unit/health/reportAggregator.spec.ts` — 기간 집계·부족/과잉, 데이터 1~2건 희소 처리(EC-5).
+- **T042** [X] `[US4]` `backend/src/domain/health/reportAggregator.ts` — 기간별 평균 영양 균형(기존 nutrition_analyses 활용)·체중 추이·부족 영양소 산출.
+- **T043** [X] `[US4]` `backend/src/modules/health/service.ts` — `upsertLog()`(일자 UNIQUE, `metrics_enc` 암호화 `utils/crypto` 재사용), `getLogs(range)`, `getReport(period)`(409 if 희소). 건강 데이터 동의 확인(FR-038).
+- **T044** [X] `[P][US4]` `backend/src/modules/health/{controller,routes}.ts` — `GET/POST /api/health/logs`, `GET /api/health/report`, `GET /api/history/calendar` (contracts). 모든 리포트 응답에 disclaimer.
 
 ### 프론트
-- **T045** `[P][US4]` `frontend/src/components/health/WeightTrendChart.vue`, `NutritionBalanceChart.vue`, `MealCalendar.vue` (Chart.js 재사용).
-- **T046** `[US4]` `frontend/src/pages/health/HealthReportPage.vue` + `stores/health.ts` + 라우트 등록(`router/index.ts`) — 입력 폼·리포트·캘린더. 면책 문구 표시.
+- **T045** [X] `[P][US4]` `frontend/src/components/health/WeightTrendChart.vue`, `NutritionBalanceChart.vue`, `MealCalendar.vue` (Chart.js 재사용).
+- **T046** [X] `[US4]` `frontend/src/pages/health/HealthReportPage.vue` + `stores/health.ts` + 라우트 등록(`router/index.ts`) — 입력 폼·리포트·캘린더. 면책 문구 표시.
 
 **Checkpoint US4**: 건강 기록→리포트 시각화 동작, 면책 포함.
 
@@ -153,10 +153,10 @@
 **Goal**: 부족 식재료를 자동 정리하고 영양 부족도·임박 대체 필요성으로 우선순위를 매긴다.
 **Independent Test**: 장보기 리스트가 priority_score로 정렬되고 사유(reason) 표기(AS-7).
 
-- **T047** `[P][US5]` 테스트 `backend/tests/unit/shopping/priorityRanker.spec.ts` — 부족도·임박 대체 정렬 규칙.
-- **T048** `[US5]` `backend/src/domain/shopping/priorityRanker.ts` — 항목 우선순위 점수·사유 산정.
-- **T049** `[US5]` `backend/src/modules/shopping/service.ts` 확장 — 산출 결과에 priority_score/reason 부여·정렬. 기존 장보기 흐름 유지.
-- **T050** `[P][US5]` `frontend/src/components/shopping/ShoppingListPanel.vue` 확장 — 우선순위 정렬·사유 표기.
+- **T047** [X] `[P][US5]` 테스트 `backend/tests/unit/shopping/priorityRanker.spec.ts` — 부족도·임박 대체 정렬 규칙.
+- **T048** [X] `[US5]` `backend/src/domain/shopping/priorityRanker.ts` — 항목 우선순위 점수·사유 산정.
+- **T049** [X] `[US5]` `backend/src/modules/shopping/service.ts` 확장 — 산출 결과에 priority_score/reason 부여·정렬. 기존 장보기 흐름 유지.
+- **T050** [X] `[P][US5]` `frontend/src/components/shopping/ShoppingListPanel.vue` 확장 — 우선순위 정렬·사유 표기.
 
 **Checkpoint US5**: 장보기 우선순위·사유 동작.
 
@@ -164,11 +164,11 @@
 
 ## Phase 8 — Polish & Cross-Cutting
 
-- **T051** `[P]` 개인정보 삭제권 정합: `privacy/exportService`·`withdrawService`에 신규 테이블(health_logs/preference_weights/saved_meal_plans/consumption_records/recommendation_edits) 포함(export 포함, hard-delete CASCADE 검증). (FR-038, 001 개인정보 체계)
-- **T052** `[P]` CLAUDE.md/quickstart 최종 점검 + `data/` 식품군 매핑 보강(필요 시 `foods`에 food_group 매핑 시드).
-- **T053** `[P]` CI 그린 확인: backend `tsc/lint/test`, frontend `vue-tsc/lint/test`, 양쪽 build. (CI 게이트)
-- **T054** `[P]` 공개 도메인 E2E 스모크: `./check_project.sh restart` 후 `https://p14.sumzip.com`에서 임박 알림·추천 근거·건강 리포트 골든패스 수동 검증(quickstart §3).
-- **T055** 성능 확인: 추천 P95 ≤ 30s 유지(가중치/임박 계산이 추가 LLM 호출 없이 DB 집계인지 확인).
+- **T051** [X] `[P]` 개인정보 삭제권 정합: `privacy/exportService`·`withdrawService`에 신규 테이블(health_logs/preference_weights/saved_meal_plans/consumption_records/recommendation_edits) 포함(export 포함, hard-delete CASCADE 검증). (FR-038, 001 개인정보 체계)
+- **T052** [X] `[P]` CLAUDE.md/quickstart 최종 점검 + `data/` 식품군 매핑 보강(필요 시 `foods`에 food_group 매핑 시드).
+- **T053** [X] `[P]` CI 그린 확인: backend `tsc/lint/test`, frontend `vue-tsc/lint/test`, 양쪽 build. (CI 게이트)
+- **T054** [X] `[P]` 공개 도메인 E2E 스모크: `./check_project.sh restart` 후 `https://p14.sumzip.com`에서 임박 알림·추천 근거·건강 리포트 골든패스 수동 검증(quickstart §3).
+- **T055** [X] 성능 확인: 추천 P95 ≤ 30s 유지(가중치/임박 계산이 추가 LLM 호출 없이 DB 집계인지 확인).
 
 ---
 

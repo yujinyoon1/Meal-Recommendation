@@ -13,10 +13,14 @@ interface Item {
   food_id?: number | null;
   quantity?: number | null;
   unit?: string | null;
+  food_group?: string | null;
   expires_at?: string | null;
   consumed?: boolean;
   warning?: string;
 }
+
+// 002 FR-010 — 식품군(임박 차등 임계 기준)
+const FOOD_GROUPS = ['채소', '과일', '육류', '수산물', '유제품', '가공·냉동', '기타'];
 
 const props = defineProps<{ items: Item[]; recommending?: boolean }>();
 const emit = defineEmits<{
@@ -41,6 +45,12 @@ function clearSelection() {
 function recommendSelected() {
   if (selected.value.size === 0) return;
   emit('recommend', [...selected.value]);
+}
+
+// 002 FR-010 — 식품군/유통기한 인라인 수정
+async function updateExpiry(id: number, payload: { food_group?: string | null; expires_at?: string | null }) {
+  await api.patch(`/inventory/items/${id}/expiry`, payload);
+  emit('changed');
 }
 
 async function markConsumed(id: number) {
@@ -131,6 +141,30 @@ async function removeItem(id: number) {
             {{ it.warning }}
           </AppBadge>
         </div>
+        <div class="card-edit">
+          <select
+            class="card-edit__group"
+            :value="it.food_group ?? ''"
+            @change="updateExpiry(it.id, { food_group: ($event.target as HTMLSelectElement).value || null })"
+          >
+            <option value="">
+              식품군…
+            </option>
+            <option
+              v-for="g in FOOD_GROUPS"
+              :key="g"
+              :value="g"
+            >
+              {{ g }}
+            </option>
+          </select>
+          <input
+            type="date"
+            class="card-edit__date"
+            :value="it.expires_at ?? ''"
+            @change="updateExpiry(it.id, { expires_at: ($event.target as HTMLInputElement).value || null })"
+          >
+        </div>
         <template #footer>
           <div class="card-actions">
             <AppButton
@@ -168,4 +202,12 @@ async function removeItem(id: number) {
 .card-head__raw { color: var(--color-muted); font-size: var(--fs-caption); margin: 0; }
 .card-head__badges { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
 .card-actions { display: flex; justify-content: flex-end; gap: var(--space-xs); }
+.card-edit { display: flex; gap: var(--space-xs); margin-top: var(--space-xs); }
+.card-edit__group, .card-edit__date {
+  flex: 1; min-width: 0;
+  background: var(--color-canvas); border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm); padding: 4px 8px; font: inherit; font-size: var(--fs-caption);
+  color: var(--color-ink);
+}
+.card-edit__group:focus, .card-edit__date:focus { outline: none; border-color: var(--color-ink); }
 </style>

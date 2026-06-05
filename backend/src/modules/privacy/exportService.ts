@@ -91,6 +91,30 @@ export async function exportUserData(userId: number) {
     [userId],
   );
 
+  // 002 — 신규 사용자 보유 데이터도 내보내기에 포함 (개인정보 이동권)
+  const [preferenceWeights] = await pool.query<RowDataPacket[]>(
+    'SELECT dimension, key_ref, weight, confidence, sample_count, updated_at FROM user_preference_weights WHERE user_id = ? ORDER BY ABS(weight) DESC',
+    [userId],
+  );
+  const [recommendationEdits] = await pool.query<RowDataPacket[]>(
+    `SELECT re.recommendation_id, re.action, re.target_type, re.target_ref, re.replacement_ref, re.created_at
+       FROM recommendation_edits re WHERE re.user_id = ? ORDER BY re.created_at`,
+    [userId],
+  );
+  const [consumption] = await pool.query<RowDataPacket[]>(
+    'SELECT food_id, ingredient_item_id, recommendation_id, quantity, consumed_at FROM consumption_records WHERE user_id = ? ORDER BY consumed_at',
+    [userId],
+  );
+  const [savedMealPlans] = await pool.query<RowDataPacket[]>(
+    'SELECT id, source_recommendation_id, name, memo, reuse_count, last_used_at, created_at FROM saved_meal_plans WHERE user_id = ? ORDER BY created_at',
+    [userId],
+  );
+  const [healthLogs] = await pool.query<RowDataPacket[]>(
+    `SELECT DATE_FORMAT(logged_at, '%Y-%m-%d') AS logged_at, weight_kg, metrics_enc, note, created_at
+       FROM health_logs WHERE user_id = ? ORDER BY logged_at`,
+    [userId],
+  );
+
   return {
     schema_version: '1.0',
     exported_at: new Date().toISOString(),
@@ -118,6 +142,19 @@ export async function exportUserData(userId: number) {
     inventory,
     recommendations: recs,
     feedbacks,
+    // 002 적응형 개인화·건강 데이터
+    preference_weights: preferenceWeights,
+    recommendation_edits: recommendationEdits,
+    consumption_records: consumption,
+    saved_meal_plans: savedMealPlans,
+    health_logs: healthLogs.map((r) => ({
+      logged_at: r.logged_at,
+      weight_kg: r.weight_kg == null ? null : Number(r.weight_kg),
+      // 민감 지표는 복호화하여 평문으로 (본인 요청)
+      metrics: r.metrics_enc ? decrypt<Record<string, unknown>>(r.metrics_enc as Buffer) : null,
+      note: r.note,
+      created_at: r.created_at,
+    })),
   };
 }
 

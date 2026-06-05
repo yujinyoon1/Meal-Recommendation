@@ -63,6 +63,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/bookmarks/BookmarksPage.vue'),
   },
   {
+    path: '/health',
+    name: 'health',
+    component: () => import('@/pages/health/HealthReportPage.vue'),
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/pages/settings/SettingsPage.vue'),
