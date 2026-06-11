@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: 스마트 식단 추천 플랫폼 API (통합)
+  version: "3.0.0"
+  description: >
+    003-meal-recommendation 통합 명세의 API 계약. 001(기반)·002(고도화) 엔드포인트를 통합한다.
+    공개 도메인 https://p14.sumzip.com (Nginx TLS → /api → backend:9534).
+servers:
+  - url: https://p14.sumzip.com/api
+  - url: http://localhost:9534/api
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+  - name: profile
+  - name: inventory
+  - name: recommendation
+  - name: feedback
+  - name: preferences
+  - name: mealplans
+  - name: health
+  - name: shopping
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      security: []
+      summary: 회원가입 (FR-050)
+      responses: { "201": { description: created } }
+  /auth/login:
+    post:
+      tags: [auth]
+      security: []
+      summary: 로그인 → JWT 발급 (FR-050)
+      responses: { "200": { description: ok }, "401": { description: invalid } }
+  /profile/health:
+    get: { tags: [profile], summary: 건강/알러지 프로필 조회 (FR-051), responses: { "200": { description: ok } } }
+    put: { tags: [profile], summary: 건강/알러지 프로필 수정 (FR-051/038), responses: { "200": { description: ok } } }
+  /inventory/items:
+    get: { tags: [inventory], summary: 보유 식재료 목록 (FR-052), responses: { "200": { description: ok } } }
+    post: { tags: [inventory], summary: 식재료 추가 (FR-052), responses: { "201": { description: created } } }
+  /inventory/items/{id}/expiry:
+    patch:
+      tags: [inventory]
+      summary: 유통기한/식품군 수정 (FR-010)
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { "200": { description: ok } }
+  /inventory/expiring:
+    get:
+      tags: [inventory]
+      summary: 임박/만료 식재료 조회 (FR-011) — 식품군별 차등 임계
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imminent: { type: array, items: { type: object } }
+                  expired: { type: array, items: { type: object } }
+  /recommendations:
+    post:
+      tags: [recommendation]
+      summary: 식단 추천 (FR-053/054/001/005/012) — 선호 가중치·임박도 결정적 반영, 알레르기 최종 차단
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recipes: { type: array, items: { type: object } }
+                  nutrition: { type: object }
+                  shopping_list: { type: array, items: { type: object } }
+                  rationale: { type: array, items: { type: string } }
+        "429": { description: rate limited (5/hour, 20/day) }
+  /recommendations/{id}/edits:
+    post:
+      tags: [recommendation]
+      summary: 추천 부분 수정 이력 기록 (FR-002) → 가중치 recompute 트리거
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { "201": { description: created } }
+  /feedback:
+    post:
+      tags: [feedback]
+      summary: 만족도·코멘트 제출 (FR-002) → 학습 반영
+      responses: { "201": { description: created } }
+  /preferences/weights:
+    get:
+      tags: [preferences]
+      summary: 선호 가중치/콜드스타트 상태 조회 (FR-001/003/004)
+      responses: { "200": { description: ok } }
+  /meal-plans:
+    get: { tags: [mealplans], summary: 저장 식단 목록 (FR-020), responses: { "200": { description: ok } } }
+    post: { tags: [mealplans], summary: 식단 저장 (FR-020), responses: { "201": { description: created } } }
+  /meal-plans/{id}/reuse:
+    post:
+      tags: [mealplans]
+      summary: 저장 식단 재사용 재추천 (FR-021) — reuse_count++
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses: { "200": { description: ok } }
+  /health/logs:
+    get: { tags: [health], summary: 건강 기록 조회 (FR-030), responses: { "200": { description: ok } } }
+    post: { tags: [health], summary: 건강 기록 입력 (FR-030/038) — 일자 UNIQUE, 암호화, responses: { "201": { description: created } } }
+  /health/report:
+    get:
+      tags: [health]
+      summary: 건강/영양 리포트 (FR-031/032/034) — 추이·균형·면책 포함
+      responses: { "200": { description: ok }, "409": { description: 데이터 희소 (EC-5) } }
+  /history/calendar:
+    get: { tags: [health], summary: 식단 이력 캘린더 (FR-033), responses: { "200": { description: ok } } }
+  /shopping/list:
+    get:
+      tags: [shopping]
+      summary: 자동 장보기 리스트 (FR-035/036) — priority_score 정렬·reason 표기
+      responses: { "200": { description: ok } }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
